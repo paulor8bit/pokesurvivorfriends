@@ -695,6 +695,7 @@ G.I18n.add({
   'Ese Gmail ya tiene su propia cuenta del juego. Usa otro Gmail.': 'Esse Gmail já tem sua própria conta de jogo. Use outro Gmail.',
   'Inicia sesión primero.': 'Entre primeiro.',
 
+  'Aplicación Android: juega sin conexión con controles táctiles y guardado local. El teléfono también puede alojar salas de hasta cuatro jugadores y compartir invitaciones por internet o por la misma red Wi-Fi. Mantén el juego abierto: al cerrarlo, termina la sala.': 'Aplicativo Android: jogue sem internet com controles por toque e progresso local. O celular também pode hospedar salas para até quatro jogadores e compartilhar convites pela internet ou pelo mesmo Wi-Fi. Mantenha o jogo aberto: ao fechar, a sala termina.',
   // ---------------- reportar marcas do ranking ----------------
   'Reportar marca sospechosa': 'Reportar recorde suspeito', 'Ya la has reportado': 'Você já reportou',
   'Ya has reportado esta marca': 'Você já reportou este recorde',

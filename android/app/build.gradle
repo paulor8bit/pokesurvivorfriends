@@ -1,0 +1,22 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'com.pokesurvivor.android'
+    compileSdk 35
+    defaultConfig {
+        applicationId 'com.pokesurvivor.android'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0.0'
+    }
+    signingConfigs { debug { storeFile file('../../.runtime/android-tools/debug.keystore') } }
+    sourceSets.main.assets.srcDirs = ['../../.runtime/android-www']
+    sourceSets.main.jniLibs.srcDirs = ['../../.runtime/android-native']
+    packaging { jniLibs { useLegacyPackaging = true; keepDebugSymbols += '**/libcloudflared.so' } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+dependencies {
+    implementation 'org.nanohttpd:nanohttpd:2.3.1'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.json:json:20240303'
+}

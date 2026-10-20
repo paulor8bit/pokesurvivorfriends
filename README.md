@@ -6,6 +6,14 @@ Repositório deste fork: [paulor8bit/pokesurvivorfriends](https://github.com/pau
 
 O foco deste projeto é um aplicativo Windows para jogar solo ou criar salas temporárias com até quatro jogadores. Os amigos entram pelo navegador usando um link e um apelido. Não há cadastro, banco de dados remoto ou sincronização de contas.
 
+## Baixar e instalar
+
+- **[Baixar para Windows x64](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Online-1.0.0-x64.exe)** — aplicativo portátil; baixe e abra o executável. Mantenha a pasta de dados criada ao lado dele para preservar o progresso.
+- **[Baixar APK Android](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Android.apk)** — versão de teste para Android 8 ou superior, ARM64. Instale o APK no celular; veja [as instruções e limitações](docs/ANDROID.md).
+- [Todas as versões e arquivos de verificação](https://github.com/paulor8bit/pokesurvivorfriends/releases).
+
+Não é necessário baixar o código-fonte nem instalar Node.js para jogar.
+
 ## Jogar
 
 Abra `PokéSurvivor Online.lnk`, `Jogar.bat` ou o executável em `dist/desktop`.
@@ -14,6 +22,13 @@ Em **Jogar com amigos**, crie uma sala e envie o convite. O computador do anfitr
 O progresso do anfitrião permanece nos dados locais do aplicativo. **Não apague `dist/desktop/PokeSurvivor-data`**: ela pode conter seu salvamento. Para convidados, cada endereço temporário tem seu próprio armazenamento no navegador.
 
 Instruções completas: [Jogar online](docs/JOGAR-ONLINE.md).
+
+## Android
+
+O APK em `dist/android/PokeSurvivor-Android.apk` permite jogar solo sem internet
+e hospedar salas no próprio celular, com convites pela internet ou pelo Wi-Fi.
+Requer Android 8 ou superior e processador ARM64. Mantenha o jogo aberto no
+celular anfitrião. Instalação, limitações e compilação: [Android](docs/ANDROID.md).
 
 ## Desenvolver
 

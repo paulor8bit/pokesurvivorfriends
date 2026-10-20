@@ -36,7 +36,7 @@
   };
   if (G.I18n.lang !== 'es') G.I18n.add(Object.fromEntries(Object.entries(texts).map(([key, values]) => [key, values[G.I18n.lang === 'pt' ? 0 : 1]])));
   const $ = id => document.getElementById(id);
-  let pendingCode = '', publicBase = '', busy = false;
+  let pendingCode = '', publicBase = '', busy = false, androidServer = false, localBase = '', internetBase = '', tunnelMessage = '';
   function normalizeCode(value) {
     value = String(value || '').trim();
     if (/^https?:\/\//i.test(value)) {
@@ -56,7 +56,15 @@
       const r = await fetch('/api/server', { cache: 'no-store' });
       const data = r.ok ? await r.json() : null;
       if (data?.online) {
+        androidServer = !!data.android;
+        localBase = data.localUrl || '';
+        internetBase = data.internetUrl || '';
+        tunnelMessage = data.tunnelMessage || '';
         publicBase = data.publicUrl || '';
+        if (androidServer) {
+          notice((data.tunnelMessage || '') + (localBase ? ' Wi-Fi: ' + localBase : ' Conecte ao Wi-Fi para convidar pela rede local.'));
+          return;
+        }
         notice(publicBase || !/^(localhost|127\.0\.0\.1)$/.test(location.hostname)
           ? 'Sin cuenta: crea una sala o introduce el código de tu amigo.'
           : 'Preparando el enlace público… espera unos segundos y vuelve a abrir esta pantalla.');
@@ -94,6 +102,10 @@
     const localOnly = /^(localhost|127\.0\.0\.1)$/.test(new URL(invitation()).hostname);
     $('lobby-copy').disabled = $('lobby-share').disabled = localOnly;
     $('lobby-link-note').textContent = localOnly ? 'El túnel todavía no está listo. Espera y vuelve a abrir la sala.' : 'Envía este enlace a tu amigo. No necesita instalar nada ni crear cuenta.';
+    $('lobby-wifi').classList.toggle('hidden', !androidServer || !localBase);
+    if (androidServer) $('lobby-link-note').textContent = internetBase
+      ? 'Convite pela internet pronto. Para a mesma rede, use Compartilhar Wi-Fi. Mantenha o jogo aberto no celular anfitrião.'
+      : tunnelMessage + (localBase ? ' O convite atual funciona somente no mesmo Wi-Fi.' : ' Conecte ao Wi-Fi ou aguarde o convite pela internet.');
     const box = $('lobby-members'); box.replaceChildren();
     for (let i = 0; i < 4; i++) {
       const m = room.members[i], card = document.createElement('div'); card.className = 'lob-card' + (m ? '' : ' empty');
@@ -127,11 +139,14 @@
     } catch (e) { G.UI.toast(e.message); }
     finally { busy = false; if (G.UI.isOpen('scr-lobby')) render(); }
   }
-  async function share(native) {
+  async function share(native, wifi = false) {
     await serverInfo(); render();
+    if (!G.Social.room) return;
+    const link = wifi && localBase ? new URL('/#sala=' + G.Social.room.id, localBase).href : invitation();
     try {
-      if (native && navigator.share) await navigator.share({ title: 'PokéSurvivor', text: G.T('¡Entra en mi sala!'), url: invitation() });
-      else { await navigator.clipboard.writeText(invitation()); G.UI.toast('Enlace copiado'); }
+      if (native && androidServer && /PokeSurvivorAndroid\//.test(navigator.userAgent)) location.href = 'pokesurvivor://share?url=' + encodeURIComponent(link);
+      else if (native && navigator.share) await navigator.share({ title: 'PokéSurvivor', text: G.T('¡Entra en mi sala!'), url: link });
+      else { await navigator.clipboard.writeText(link); G.UI.toast('Enlace copiado'); }
     } catch (e) { if (e.name !== 'AbortError') { $('lobby-link').focus(); $('lobby-link').select(); G.UI.toast('Selecciona y copia el enlace de la sala.'); } }
   }
   G.FriendsUI = { open };
@@ -145,6 +160,10 @@
       $('room-form').onsubmit = e => { e.preventDefault(); enter(true); };
       $('room-create').onclick = () => enter(false); $('lobby-start').onclick = start;
       $('lobby-copy').onclick = () => share(false); $('lobby-share').onclick = () => share(true);
+      $('lobby-wifi').onclick = () => share(true, true);
+      setInterval(() => {
+        if (G.UI.isOpen('scr-lobby') && G.Social.room?.isHost) serverInfo().then(render);
+      }, 5000);
       $('lobby-menu').onclick = () => G.MenuUI.open();
       $('lobby-leave').onclick = async () => { await G.Social.leaveRoom(); G.MenuUI.open(); };
       G.Social.on(what => {

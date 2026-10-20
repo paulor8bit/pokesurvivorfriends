@@ -26,3 +26,7 @@ docs/CONTACTOS_CREADORES.md
 Link Online.txt
 Abrir Jogo Online.url
 /dist/
+/android/.gradle/
+/android/local.properties
+/android/app/build/
+/android/build/

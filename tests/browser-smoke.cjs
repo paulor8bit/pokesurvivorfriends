@@ -4,9 +4,9 @@ const assert = require('node:assert/strict');
 const { createGameServer } = require('../server/game-server');
 
 (async () => {
-  const game = createGameServer();
-  game.server.listen(0, '127.0.0.1'); await once(game.server, 'listening');
-  const base = `http://127.0.0.1:${game.server.address().port}`;
+  const game = process.env.POKESURVIVOR_TEST_URL ? null : createGameServer();
+  if (game) { game.server.listen(0, '127.0.0.1'); await once(game.server, 'listening'); }
+  const base = process.env.POKESURVIVOR_TEST_URL || `http://127.0.0.1:${game.server.address().port}`;
   const browser = await chromium.launch({ channel: 'msedge', headless: true });
   const errors = [], contexts = [], external = [];
   async function player(invite = '/') {
@@ -54,6 +54,6 @@ const { createGameServer } = require('../server/game-server');
     console.log('Navegador: início sem cadastro, configurações, autoria, convite, cooperativo por relé e desconexão passaram.');
   } finally {
     for (const context of contexts) await context.close().catch(() => {});
-    await browser.close(); await game.close();
+    await browser.close(); if (game) await game.close();
   }
 })().catch(error => { console.error(error); process.exitCode = 1; });

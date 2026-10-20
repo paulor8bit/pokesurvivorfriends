@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-20', title: ['Android', 'Android'], new: [
+    ['Aplicación Android: juega sin conexión con controles táctiles y guardado local. El teléfono también puede alojar salas de hasta cuatro jugadores y compartir invitaciones por internet o por la misma red Wi-Fi. Mantén el juego abierto: al cerrarlo, termina la sala.',
+     'Android app: play offline with touch controls and local saves. The phone can also host rooms for up to four players and share invitations over the internet or the same Wi-Fi. Keep the game open: closing it ends the room.']
+  ] },
   { d: '2026-10-20', title: ['Equipo y partidas con amigos', 'Team and games with friends'], new: [
     ['Aplicación de escritorio para Windows: juega y comparte la sala desde una ventana propia, sin abrir terminales ni crear cuentas.',
      'Windows desktop app: play and share your room from its own window, without terminals or accounts.'],
