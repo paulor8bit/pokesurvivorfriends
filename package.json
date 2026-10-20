@@ -1,0 +1,65 @@
+{
+  "name": "pokesurvivor",
+  "version": "1.0.0",
+  "description": "PokéSurvivor - Fan game de sobrevivência Pokémon",
+  "author": "Paulinho Ricardo - gatinho.punkeca",
+  "repository": { "type": "git", "url": "https://github.com/paulor8bit/pokesurvivorfriends.git" },
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:game": "node tools/build.js",
+    "prebuild": "npm run build:game && node tools/prepare-desktop.js",
+    "build": "electron-builder --win --dir --x64",
+    "postbuild": "node tools/build-desktop-launcher.js",
+    "online": "node tools/play-online.js",
+    "serve": "node server/game-server.js",
+    "test:online": "node --test tests/rooms.test.js tests/online-session.test.js",
+    "test:browser": "node tests/browser-smoke.cjs",
+    "test": "node --test tests/rooms.test.js tests/online-session.test.js tests/storage.test.js"
+  },
+  "build": {
+    "appId": "com.pokesurvivor.app",
+    "productName": "PokéSurvivor",
+    "directories": {
+      "output": ".runtime/desktop-package"
+    },
+    "files": [
+      "electron/**/*",
+      "server/**/*",
+      "index.html",
+      "css/**/*",
+      "js/**/*",
+      "assets/**/*",
+      "favicon.ico",
+      "sw.js",
+      "version.json",
+      "manifest.webmanifest",
+      "LICENSE",
+      "LICENSE-NONCOMMERCIAL.md",
+      "CREDITS.md"
+    ],
+    "artifactName": "PokeSurvivor-Online-${version}-${arch}.${ext}",
+    "electronDist": "node_modules/electron/dist",
+    "extraResources": [
+      {
+        "from": ".runtime/cloudflared-windows-amd64.exe",
+        "to": "tunnel/cloudflared.exe"
+      }
+    ],
+    "win": {
+      "icon": "electron/assets/icon.ico",
+      "target": "portable"
+    }
+  },
+  "dependencies": {
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "@electron/asar": "^3.4.1",
+    "7zip-bin": "^5.2.0",
+    "electron": "^44.9.1",
+    "electron-builder": "^25.0.0",
+    "playwright": "^1.64.1",
+    "terser": "^5.51.2"
+  }
+}

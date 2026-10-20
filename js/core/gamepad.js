@@ -3,7 +3,6 @@
  * Se activa o quita en Ajustes > Controles ('gamepad'; vibración: 'padRumble').
  *
  *   En la partida:  stick izquierdo o cruceta   moverse
- *                   LB / RB (o LT / RT)         ataque anterior / siguiente
  *                   Start                       pausa
  *                   A                           saltar la animación de Arceus
  *                   stick derecho               apuntar (con "Apuntar a mano" en Accesibilidad)
@@ -250,8 +249,6 @@ G.Pad = (() => {
       vec = [x, y];
       const ax = p.axes[2] || 0, ay = p.axes[3] || 0;
       if (Math.hypot(ax, ay) > 0.35) { aimVec = [ax, ay]; aimAt = performance.now(); } else aimVec = [0, 0];
-      if (hit(BT.LB) || hit(BT.LT)) G.Input.virtual('keyq');
-      if (hit(BT.RB) || hit(BT.RT)) G.Input.virtual('keye');
       if (hit(BT.START) || hit(BT.BACK)) G.Input.virtual('escape');
       if (hit(BT.A)) G.Input.virtual('space');
     }

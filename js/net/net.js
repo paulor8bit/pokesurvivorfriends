@@ -2,14 +2,9 @@
  * Topología en estrella: el ANFITRIÓN habla con cada invitado; los invitados
  * sólo hablan con el anfitrión (él reenvía lo que haga falta).
  *
- * Dos caminos, a la vez:
- *   directo  WebRTC (canal de datos entre navegadores, sin pasar por ningún
- *            servidor). La negociación (señalización) va por la base de datos.
- *            Sólo con STUN gratuito de Google: si la red no deja conectar
- *            directo (algunos routers y datos móviles), esa pareja no puede
- *            jugar junta. El TURN de Cloudflare se QUITÓ el 15-10-2026 (de pago).
- *   relé     (APAGADO) los mensajes irían por la Realtime Database:
- *            rooms/{sala}/q/{destinatario}/{id}, a 1 $ el GB.
+ *   directo  WebRTC con STUN gratuito de Google.
+ *   relé     WebSocket por el túnel temporal del anfitrión, si falla WebRTC.
+ * La señalización y las salas usan el mismo túnel, sin cuentas ni Firebase.
  *
  * Se envía por el canal directo si está abierto; si no, por el relé. El que
  * recibe escucha los dos, así que no hace falta ponerse de acuerdo.
@@ -21,20 +16,14 @@
 G.Net = (() => {
   const ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
   const DIRECT_TIMEOUT = 9000;     // ms para conseguir canal directo antes de usar el relé
-  // Relé por la Realtime Database APAGADO (12-10-2026): a 1 $ el GB era lo que más
-  // costaba del cooperativo. Sin conexión directa, esa pareja no puede jugar
-  // junta ('failed') y el anfitrión lo reintenta cada RETRY_MS. Por la base de datos
-  // sólo pasa la señalización (unos pocos mensajes pequeños para conectarse).
-  const ALLOW_RELAY = false, RETRY_MS = 15000;
+  // The host relays through the temporary tunnel; no paid TURN service.
+  const ALLOW_RELAY = true, RETRY_MS = 15000;
 
 
-  let rtdb = null, uid = null, roomId = null, isHost = false, hostUid = null;
-  let qref = null;
+  let uid = null, roomId = null, isHost = false, hostUid = null;
   const peers = new Map();         // uid -> { pc, dc, mode, timer }
   const handlers = new Set(), peerHandlers = new Set();
-  const stats = { sent: 0, recv: 0, relaySent: 0,
-    // Sólo los datos de la partida que se han mandado bien (sin ICE/SCTP/DTLS/TURN).
-    sentBytes: 0, jsonBytes: 0, recvBytes: 0, binarySent: 0, binaryRecv: 0, invalidBinary: 0 };
+  let stats = { sent: 0, recv: 0, relaySent: 0 };
 
   function emitPeer(u) {
     const p = peers.get(u);
@@ -46,19 +35,8 @@ G.Net = (() => {
   function open(id, host, hostId) {
     if (roomId === id) return;
     close();
-    const fb = G.DB.fb;
-    rtdb = fb.rtdb; uid = fb.uid;
+    uid = G.Social.uid;
     roomId = id; isHost = host; hostUid = hostId;
-    qref = rtdb.ref('rooms/' + id + '/q/' + uid);
-    qref.on('child_added', s => {
-      const raw = s.val();
-      s.ref.remove().catch(() => {});
-      let m;
-      try { m = JSON.parse(raw); } catch (e) { return; }
-      if (!m || !m.f) return;
-      if (m.sig) onSignal(m.f, m.sig);
-      else deliver(m.f, m.d);
-    });
     // Invitado: hueco para el anfitrión desde ya (se sustituye al llegar su
     // oferta). Así, si no llega nunca, se sigue por el relé y se sabe cuándo se va.
     if (!isHost) {
@@ -70,7 +48,8 @@ G.Net = (() => {
 
   function close() {
     for (const u of [...peers.keys()]) drop(u);
-    if (qref) { qref.off(); qref = null; }
+    signalQueues.clear();
+    pendingIce.clear();
     roomId = null; isHost = false; hostUid = null;
   }
 
@@ -96,7 +75,7 @@ G.Net = (() => {
     catch (e) { p.mode = 'relay'; emitPeer(u); return p; }
     pc.onicecandidate = e => { if (e.candidate) signal(u, { c: e.candidate.toJSON() }); };
     pc.onconnectionstatechange = () => {
-      if (pc.connectionState === 'failed' && p.mode !== 'closed') useRelay(u);
+      if (pc.connectionState === 'failed' && p.mode !== 'closed') { p.mode = 'connecting'; useRelay(u); }
     };
     // Si en unos segundos no hay canal directo, se sigue por el relé.
     p.timer = setTimeout(() => { if (p.mode === 'connecting') useRelay(u); }, DIRECT_TIMEOUT);
@@ -106,33 +85,12 @@ G.Net = (() => {
 
   function wireChannel(u, p, dc) {
     p.dc = dc;
-    p.binaryVersion = 0;
-    dc.binaryType = 'arraybuffer';
-    dc.onopen = () => {
-      clearTimeout(p.timer); p.mode = 'direct';
-      // Aviso de que entendemos binario (las versiones viejas lo ignoran); hasta que el otro
-      // mande el suyo, se le habla en JSON.
-      try { dc.send(JSON.stringify({ k: 'net-cap', binary: G.NetCodec.version })); } catch (e) { /* el JSON sigue valiendo */ }
-      emitPeer(u);
-    };
+    dc.onopen = () => { if (peers.get(u) !== p || !roomId) return; clearTimeout(p.timer); p.mode = 'direct'; emitPeer(u); };
     dc.onclose = () => { if (p.mode === 'direct') { p.mode = 'connecting'; useRelay(u); } };
     dc.onmessage = e => {
+      if (peers.get(u) !== p || !roomId) return;
       let m;
-      if (typeof e.data === 'string') {
-        try { m = JSON.parse(e.data); } catch (err) { return; }
-        if (m && m.k === 'net-cap') {
-          p.binaryVersion = m.binary === G.NetCodec.version ? m.binary : 0;
-          return;
-        }
-        stats.recvBytes += G.NetCodec.size(e.data);
-      } else {
-        try {
-          if (p.binaryVersion !== G.NetCodec.version) throw Error('unnegotiated binary');
-          m = G.NetCodec.decode(e.data);
-          if (!m || m.k !== 'f') throw Error('not a frame');
-        } catch (err) { stats.invalidBinary++; return; }
-        stats.recvBytes += e.data.byteLength; stats.binaryRecv++;
-      }
+      try { m = JSON.parse(e.data); } catch (err) { return; }
       deliver(u, m);
     };
   }
@@ -140,7 +98,7 @@ G.Net = (() => {
   function useRelay(u) {
     const p = peers.get(u);
     if (!p || p.mode === 'direct' || p.mode === 'closed' || p.mode === 'failed') return;
-    if (ALLOW_RELAY) { p.mode = 'relay'; emitPeer(u); return; }
+    if (ALLOW_RELAY) { clearTimeout(p.timer); p.mode = 'relay'; emitPeer(u); return; }
     // Sin relé: no se puede jugar con esa persona por ahora. El anfitrión reintenta.
     clearTimeout(p.timer);
     p.mode = 'failed';
@@ -183,7 +141,7 @@ G.Net = (() => {
         if (p && p.pc) await p.pc.setRemoteDescription(sig.sdp);
       } else if (sig.c) {
         if (p && p.pc && p.pc.remoteDescription) await p.pc.addIceCandidate(sig.c).catch(() => {});
-        else { if (!pendingIce.has(from)) pendingIce.set(from, []); pendingIce.get(from).push(sig.c); }
+        else { if (!pendingIce.has(from)) pendingIce.set(from, []); if (pendingIce.get(from).length < 64) pendingIce.get(from).push(sig.c); }
       }
     } catch (e) {
       console.warn('[Net] señalización:', e.message);
@@ -207,26 +165,16 @@ G.Net = (() => {
   // ---------------- envío / recepción ----------------
 
   function relayPush(to, env) {
-    if (!rtdb || !roomId) return;
-    rtdb.ref('rooms/' + roomId + '/q/' + to).push(JSON.stringify(env)).catch(e => console.warn('[Net] relé:', e.code || e.message));
+    if (!roomId) return;
+    G.Social.sendPeer(to, env);
   }
 
   function send(to, msg) {
     if (!roomId) return;
     const p = peers.get(to);
     stats.sent++;
-    if (p && p.dc && p.dc.readyState === 'open') {
-      try {
-        const json = JSON.stringify(msg), jsonBytes = G.NetCodec.size(json);
-        const packed = p.binaryVersion === G.NetCodec.version && msg && msg.k === 'f'
-          ? G.NetCodec.encode(msg) : null;
-        const binary = packed && packed.byteLength < jsonBytes;
-        p.dc.send(binary ? packed : json);
-        stats.sentBytes += binary ? packed.byteLength : jsonBytes;
-        stats.jsonBytes += jsonBytes;
-        if (binary) stats.binarySent++;
-        return;
-      } catch (e) { /* cae al relé */ }
+    if (p && p.dc && p.dc.readyState === 'open' && p.dc.bufferedAmount < 512 * 1024) {
+      try { p.dc.send(JSON.stringify(msg)); return; } catch (e) { /* cae al relé */ }
     }
     // Sin relé, los datos de la partida no van por la base de datos (se pierden: esa
     // pareja no está conectada). Sólo pasa el aviso de empezar.
@@ -242,6 +190,17 @@ G.Net = (() => {
     stats.recv++;
     handlers.forEach(fn => { try { fn(from, msg); } catch (e) { console.error('[Net] mensaje:', e); } });
   }
+
+  // The server supplies the sender identity and only forwards within a room.
+  const signalQueues = new Map();
+  G.Social.onSignal((from, msg) => {
+    if (!roomId || !G.Social.room?.members.some(m => m.uid === from) || (!isHost && from !== hostUid)) return;
+    if (msg.sig) {
+      const id = roomId;
+      const previous = signalQueues.get(from) || Promise.resolve();
+      signalQueues.set(from, previous.then(() => { if (roomId === id) return onSignal(from, msg.sig); }).catch(() => {}));
+    } else if (msg.d) deliver(from, msg.d);
+  });
 
   return {
     open, close, syncMembers, send, toHost, broadcast,

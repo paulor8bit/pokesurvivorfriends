@@ -263,19 +263,6 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
   padding: 30px; min-width: 0;
 }
 .menu-left .logo .t1 { font-size: clamp(36px, 6vw, 64px); }
-/* Frase amarilla torcida en la esquina del título, como las de Minecraft. */
-.menu-left .logo .t1 { position: relative; }
-.splash {
-  position: absolute; right: 0; top: 82%; width: max-content; max-width: 14em;
-  font-size: clamp(10px, 1.2vw, 15px); font-weight: 700; line-height: 1.15; letter-spacing: 0;
-  color: #ffff40; text-shadow: 2px 2px 0 #3f3f00; pointer-events: none; z-index: 3;
-  transform: translateX(62%) rotate(-14deg); animation: splash-pulse .9s ease-in-out infinite alternate;
-}
-@keyframes splash-pulse {
-  from { transform: translateX(62%) rotate(-14deg) scale(.94); }
-  to { transform: translateX(62%) rotate(-14deg) scale(1.06); }
-}
-@media (prefers-reduced-motion: reduce) { .splash { animation: none; } }
 .partner-card { text-align: center; margin-top: 10px; }
 .partner-card .nm { font-size: 24px; font-weight: 700; text-shadow: 3px 3px 0 var(--shadow); }
 .partner-card .lv { color: var(--muted); font-size: 14px; text-shadow: 2px 2px 0 var(--shadow); }
@@ -776,7 +763,6 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   .menu-left { padding: 50px 8px 6px; }
   .menu-left .logo { margin-bottom: 2px; }
   .menu-left .logo .t1 { font-size: 28px; }
-  .splash { top: 50%; font-size: 9px; max-width: 10em; margin-right: -3.6em; }
   .logo .t2 { font-size: 10px; margin-top: 2px; letter-spacing: 2px; }
   #menu-partner { height: min(34vh, 130px); width: auto; }
   .partner-card { margin-top: 2px; }
@@ -895,9 +881,3 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   #dex-detail .btn { position: sticky; bottom: 0; order: 9; margin-top: auto; padding: 8px 6px; font-size: 15px;
     box-shadow: 0 -6px 10px rgba(5,10,25,.6); }
 }
-
-/* Local CJK fonts: no font service or additional downloads. */
-html:lang(zh-Hant) { --font: 'Pixelify', 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans CJK TC', system-ui, sans-serif; }
-html:lang(zh-Hans) { --font: 'Pixelify', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', system-ui, sans-serif; }
-html:lang(zh) body { line-height: 1.5; -webkit-font-smoothing: antialiased; }
-html:lang(zh) .btn, html:lang(zh) .chip { letter-spacing: 0; }

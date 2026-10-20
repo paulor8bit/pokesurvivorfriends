@@ -60,9 +60,9 @@ G.Spawner = (() => {
     return null;
   }
 
-  /** Jugador alrededor del que sale el siguiente enemigo (nunca uno que aún vuelve de la grieta). */
+  /** Jugador alrededor del que sale el siguiente enemigo. */
   function anchor() {
-    const alive = players.filter(o => !o.dead && !G.Rift.leftBehind(o));
+    const alive = players.filter(o => !o.dead);
     return alive.length ? G.U.pick(alive) : players[0];
   }
 

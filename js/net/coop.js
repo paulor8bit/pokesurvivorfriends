@@ -24,9 +24,8 @@
 G.Coop = (() => {
   const ANIMS = ['Idle', 'Walk', 'Attack', 'Shoot', 'Charge', 'Hurt', 'Faint'];
   const COLORS = ['#ffcb3d', '#5fc8ff', '#7ee07a', '#ff8ad8'];
-  // Mensajes por segundo: 15 por la conexión directa y 3 por el relé de la
-  // Realtime Database (apagado: 1 $ el GB).
-  const RATE_FAST = 1 / 15, RATE_SLOW = 1 / 3;
+  // 15 updates/s direct, 10 over the host's temporary WebSocket tunnel.
+  const RATE_FAST = 1 / 15, RATE_SLOW = 1 / 10;
   const rateFor = u => (G.Net.slow(u) ? RATE_SLOW : RATE_FAST);
   const NEAR = 950;                     // radio de enemigos que se mandan a cada uno
 
@@ -137,17 +136,9 @@ G.Coop = (() => {
             r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq];
   }
 
-  /** Número que llega por la red: si no es un número de verdad vale `def`, y si se pasa se queda en el tope. */
-  const num = (v, def, lo, hi) => typeof v === 'number' && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : def;
-
-  // Lo que manda otro jugador no se cree a ciegas: un xpMul de 1e309 colgaba al anfitrión al subir de nivel.
   function readState(a) {
-    if (!Array.isArray(a)) a = [];
-    return { x: num(a[0], 0, -1e6, 1e6), y: num(a[1], 0, -1e6, 1e6), ang: num(a[2], 0, -10, 10), walk: a[3] ? 1 : 0,
-             hp: num(a[4], 0, 0, 1e6), maxHp: num(a[5], 1, 1, 1e6), dead: a[6] ? 1 : 0,
-             mv: typeof a[7] === 'string' ? a[7].slice(0, 40) : '', ml: num(a[8], 1, 1, 99),
-             mag: num(a[9], 0, 0, 5000), aim: num(a[10], 0, -10, 10), xpMul: num(a[11], 1, 0.1, 20),
-             rev: num(a[12], 0, 0, 60), ch: a[13] === undefined ? undefined : a[13] ? 1 : 0, ld: num(a[14], 0, 0, 1e9) };
+    return { x: a[0], y: a[1], ang: a[2], walk: a[3], hp: a[4], maxHp: a[5], dead: a[6], mv: a[7], ml: a[8],
+             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14] };
   }
 
   // ---------------- envío ----------------
@@ -175,7 +166,7 @@ G.Coop = (() => {
       if (e.dead || G.U.dist2(e.x, e.y, near.x, near.y) > r2n) continue;
       const a = ANIMS.indexOf(e.anim.cur);
       out.push([e.id, r1(e.x), r1(e.y), Math.ceil(e.hp), a < 0 ? 0 : a, e.anim.dir,
-                (e.burn > 0 ? 1 : 0) | (e.poison > 0 ? 2 : 0) | (e.shield > 0 ? 4 : 0) | (e.slow > 0 ? 8 : 0)]);
+                (e.burn > 0 ? 1 : 0) | (e.poison > 0 ? 2 : 0) | (e.shield > 0 ? 4 : 0)]);
     }
     return out;
   }
@@ -231,7 +222,10 @@ G.Coop = (() => {
 
   G.Net.on((from, msg) => {
     if (!msg) return;
-    if (msg.k === 'start') { if (G.Flow.startCoop) G.Flow.startCoop(msg); return; }
+    if (msg.k === 'start') {
+      if (from === G.Social.room?.host && msg.host === from && G.Flow.startCoop) G.Flow.startCoop(msg);
+      return;
+    }
     if (!active || msg.k !== 'f') return;
     if (host) onClientFrame(from, msg); else if (from === hostUid) onHostFrame(msg);
   });
@@ -325,13 +319,8 @@ G.Coop = (() => {
     if (msg.ho) {
       const k = msg.ho.join('|');
       if (k !== lastHo) { lastHo = k; api.hold && api.hold(msg.ho); }
-      // Hay cartas abiertas que aún no has elegido y no las tienes delante (eran
-      // nuevas, o algo te las cerró al elegir muy deprisa): se abren otra vez.
-      // Antes sólo se miraba si eran nuevas y te podías quedar fuera de la ronda
-      // con los demás esperándote.
-      const showing = api.inLevelUp && api.inLevelUp();
-      if (msg.lu && msg.lu[0] > doneSeq && (msg.lu[0] > seenSeq || !showing)) { seenSeq = msg.lu[0]; api.levelStart(msg.lu[1]); }
-      else if (!msg.lu && showing) api.resume();
+      if (msg.lu && msg.lu[0] > seenSeq) { seenSeq = msg.lu[0]; api.levelStart(msg.lu[1]); }
+      else if (!msg.lu && api.inLevelUp && api.inLevelUp()) api.resume();
     }
     api.syncTeam({ time: msg.t, level: msg.lv, xp: msg.xp, xpNext: msg.xn, kills: msg.ki, bosses: msg.bo, coins: msg.co,
                    t1: (msg.tk || [])[0], t10: (msg.tk || [])[1] });
@@ -392,9 +381,7 @@ G.Coop = (() => {
       case 'wx': G.Weather.onEvent(ev); break;
       case 'ev': G.Events.onNet(ev); break;
       case 'hz': G.Hazards.add(ev[1], true); break;
-      case 'fxr':
-        if (typeof ev[4] === 'string') G.FX.ring(num(ev[1], 0, -1e6, 1e6), num(ev[2], 0, -1e6, 1e6), 8, num(ev[3], 8, 0, 2000), ev[4], 0.5, 3);
-        break;
+      case 'fxr': G.FX.ring(ev[1], ev[2], 8, ev[3], ev[4], 0.5, 3); break;
     }
   }
 

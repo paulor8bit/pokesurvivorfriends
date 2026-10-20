@@ -1,5 +1,5 @@
 /* ============ combat.js — ejecución de movimientos y colisiones ============
- * Sólo se ejecuta el movimiento ACTIVO del jugador. Cada `kind` tiene aquí su
+ * Se ejecutan TODOS los movimientos del jugador a la vez. Cada `kind` tiene aquí su
  * implementación. Todos los ataques dañan también los objetos destructibles
  * del escenario (rocas, cofres, hierba alta).
  *
@@ -16,11 +16,11 @@ G.Combat = (() => {
   let ghost = false;
   let fields = [];
 
-  // ---------------- ejecutar el movimiento activo ----------------
+  // ---------------- ejecutar todos los movimientos a la vez ----------------
 
   function tick(dt, pl, now) {
     if (pl.dead) return;
-    // Vínculos: todos los movimientos del hueco activo, cada uno con su recarga.
+    // Todos los movimientos del jugador, cada uno con su propia recarga.
     for (const m of pl.activeGroup()) tickMove(dt, pl, m, now);
   }
 
@@ -253,8 +253,7 @@ G.Combat = (() => {
       G.FX.beam(fx, fy, Math.atan2(ty - fy, tx - fx), Math.hypot(tx - fx, ty - fy), 10, col, vis);
       if (!ghost) {
         // Infortunio: más daño a quien ya sufre un estado.
-        // (Una copia del anfitrión no lleva los estados: vienen en net.st.)
-        const hex = m.hex && (cur.burn > 0 || cur.poison > 0 || cur.slow > 0 || (cur.net && cur.net.st & 11)) ? m.hex : 1;
+        const hex = m.hex && (cur.burn > 0 || cur.poison > 0 || cur.slow > 0) ? m.hex : 1;
         hit(pl, cur, m.dmg * pl.atkFor(m) * k * hex, col, tx - fx, ty - fy, 0, m);
       }
       k *= 0.85;
@@ -498,15 +497,15 @@ G.Combat = (() => {
       return f.i >= f.n;
     }
     if (f.kind === 'vortex') {
-      // Atrae quien tiene los enemigos de verdad: el anfitrión, también con el
-      // remolino (fantasma) de un invitado. En el invitado son copias y no se tocan.
-      // Antes el fantasma no atraía y en grupo el remolino de un invitado no hacía nada.
-      for (const e of G.EnemyMgr.queryCircle(f.x, f.y, f.r * 1.4)) {
-        if (e.dead || e.remote) continue;
-        const dx = f.x - e.x, dy = f.y - e.y, d = Math.hypot(dx, dy);
-        if (d < 4) continue;
-        const k = Math.min(d, f.pull * dt * (e.boss || e.judge ? 0.25 : 1));
-        e.x += dx / d * k; e.y += dy / d * k;
+      // Atrae (en quien manda: los enemigos de un invitado se mueven en el anfitrión).
+      if (!f.ghost) {
+        for (const e of G.EnemyMgr.queryCircle(f.x, f.y, f.r * 1.4)) {
+          if (e.dead || e.remote) continue;
+          const dx = f.x - e.x, dy = f.y - e.y, d = Math.hypot(dx, dy);
+          if (d < 4) continue;
+          const k = Math.min(d, f.pull * dt * (e.boss || e.judge ? 0.25 : 1));
+          e.x += dx / d * k; e.y += dy / d * k;
+        }
       }
       f.tick -= dt;
       if (f.tick <= 0) { f.tick = 0.4; blast(f, f.r); }
@@ -843,14 +842,15 @@ G.Combat = (() => {
           break;
         }
 
-        const crit = isCrit(pl);
+        const o = p.owner || pl;
+        const crit = isCrit(o);
         const k = (p.mtype ? typeK(p.mtype, e) : 1) * G.Stats.taken(e.mon, p.mcat) * (crit ? CRIT_MUL : 1);
-        e.hurt(p.dmg * k, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), p.knock,
+        e.hurt(p.dmg * k, p.color, p.vx || (e.x - o.x), p.vy || (e.y - o.y), p.knock,
                crit ? 'crit' : p.mtype ? G.Types.label(G.Types.mult(p.mtype, e.types)) : null);
         if (Math.random() < 0.5) G.FX.sp('impact', p.vis ? p.vis.pal : 'normal', e.x, e.y - e.bodyH * 0.5, { life: 0.12, scale: 1 });
-        pl.dmgDealt += p.dmg * k;
+        o.dmgDealt += p.dmg * k;
         if (p.src) p.src.dealt = (p.src.dealt || 0) + p.dmg * k;
-        pl.onDealt(p.dmg * k);
+        o.onDealt(p.dmg * k);
         if (p.burn) e.applyBurn(p.burn);
         if (p.poison) e.applyPoison(p.poison);
         if (p.slow) e.applySlow(p.slow);

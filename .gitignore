@@ -21,3 +21,8 @@ docs/CONTACTOS_CREADORES.md
 
 # Caché local de wrangler (Cloudflare)
 .wrangler/
+.runtime/
+/PokéSurvivor Online.lnk
+Link Online.txt
+Abrir Jogo Online.url
+/dist/

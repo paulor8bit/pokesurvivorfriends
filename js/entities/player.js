@@ -1,7 +1,9 @@
 /* ============ player.js — el Pokémon que controlas ============
- * (x, y) son los PIES. Sólo UN movimiento está activo a la vez: se dispara
- * solo y se cambia con 1-4 / Q / E. Cada disparo reproduce la animación de
- * ataque de Mundo Misterioso que le toca (Attack, Shoot o Charge).
+ * (x, y) son los PIES. Todos los movimientos aprendidos se disparan solos a
+ * la vez (como Vampire Survivors): ya no hay que alternar. Toca el icono de
+ * un movimiento (abajo) para activarlo o desactivarlo. Cada disparo reproduce
+ * la animación de ataque de Mundo Misterioso que le toca (Attack, Shoot o
+ * Charge).
  */
 G.Player = class Player {
   /**
@@ -160,10 +162,10 @@ G.Player = class Player {
       G.FX.dmgText(this.x, this.y - this.bodyH - 8, 'Cinta Elección', '#ff8ad8');
       return;
     }
+    // Ya todos los movimientos se lanzan a la vez: esto sólo cambia el halo
+    // que se dibuja bajo el Pokémon, no hay que alternar nada.
     this.active = i;
-    G.Projectiles.clearOrbs(this);
     G.Audio.sfx('select');
-    for (const m of this.slots[i]) m.t = Math.min(m.t, m.cd * 0.35);
     const m = this.slots[i][0];
     G.FX.ring(this.x, this.y - G.LIFT * 0.5, 6, this.r * 3.4, G.U.TYPE_COLOR[m.type], 0.3, 3);
   }
@@ -207,10 +209,17 @@ G.Player = class Player {
     return target;
   }
 
-  /** Movimientos que se lanzan ahora (el grupo del hueco activo). */
-  activeGroup() { return this.slots[this.active] || []; }
+  /** Movimientos que se lanzan ahora: todos los que no están desactivados
+   *  (se activan/desactivan tocando su icono). Cada uno con su recarga. */
+  activeGroup() { return this.moves.filter(m => !m.off); }
 
   activeMove() { return this.activeGroup()[0]; }
+
+  /** Activa o desactiva un movimiento (clic en su icono del HUD). */
+  toggleMove(m) {
+    m.off = !m.off;
+    if (m.off && m.kind === 'orbit') G.Projectiles.clearOrbs(this, m.id);
+  }
 
   /**
    * Lo llama combat.js al lanzar un movimiento. Elige la animación de PMD y la
@@ -226,8 +235,8 @@ G.Player = class Player {
                    mine: 'Charge', meteor: 'Charge', turret: 'Charge', dash: 'Attack', trail: 'Walk', cone: 'Shoot' }[m.kind] || 'Attack';
     // Las familias nuevas suenan como la parecida de las de siempre.
     const SND = { boomerang: 'projectile', chain: 'beam', mine: 'nova', meteor: 'nova', turret: 'buff', dash: 'melee', trail: 'aura', cone: 'projectile' };
-    // El rastro no suena a cada charco (sería un zumbido constante).
-    if (m.kind !== 'trail') G.Audio.sfx('shot', { kind: SND[m.kind] || m.kind, type: m.type });
+    // El rastro no suena a cada charco (sería un zumbido constante). Los bots tampoco.
+    if (m.kind !== 'trail' && !this.bot) G.Audio.sfx('shot', { kind: SND[m.kind] || m.kind, type: m.type });
     if (m.kind === 'trail') return;
     // No reinicies una animación que va por la mitad: se vería a tirones.
     if (this.anim.busy() && this.anim.progress() < 0.65) return;
@@ -291,11 +300,9 @@ G.Player = class Player {
 
   /** Devuelve cuántos niveles ha subido (pueden ser varios de golpe). */
   gainXp(amount) {
-    const add = amount * this.xpMul;
-    if (!Number.isFinite(add) || add <= 0) return 0;     // una experiencia infinita no acababa nunca de subir niveles
-    this.xp += add;
+    this.xp += amount * this.xpMul;
     let leveled = 0;
-    while (this.xp >= this.xpNext && leveled < 50) {
+    while (this.xp >= this.xpNext) {
       this.xp -= this.xpNext;
       this.level++;
       this.xpNext = Player.xpFor(this.level);
@@ -389,8 +396,9 @@ G.Player = class Player {
     // los ataques a distancia no le darían nunca al jefe.
     // Sin enemigos, apunta a la roca o cofre más cercano.
     const all = G.EnemyMgr.all();
-    const m = this.activeMove();
-    const ranged = !!m && (m.kind === 'projectile' || m.kind === 'beam');
+    // Se apunta como "a distancia" si algún ataque activado lo es (así el jefe
+    // tiene prioridad cuando hay disparos de por medio).
+    const ranged = this.activeGroup().some(m => m.kind === 'projectile' || m.kind === 'beam');
     const threat = G.Projectiles.nearest(all, this.x, this.y, this.r + 24);
     const boss = all.find(e => e.boss && !e.dead && G.U.dist(this.x, this.y, e.x, e.y) < 330);
     const tg = (ranged ? boss || threat : threat || boss)
@@ -422,8 +430,7 @@ G.Player = class Player {
    * se ha movido después (en PC). Soltar el stick sin tocar el ratón = solo.
    */
   handAim() {
-    // En el móvil (táctil) no hay apuntado a mano: siempre apunta solo.
-    if (this.remote || G.Settings.touch || !G.Settings.get('aimManual')) return null;
+    if (this.remote || !G.Settings.get('aimManual')) return null;
     const st = G.Pad.aim();
     if (st) return Math.atan2(st[1], st[0]);
     if (G.Touch.active || !G.Input.mouseMovedAt || G.Input.mouseMovedAt < G.Pad.aimAt) return null;
@@ -552,9 +559,9 @@ G.Player = class Player {
       ctx.textAlign = 'center';
       const y = this.y - this.bodyH - 8;
       ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(0,0,0,.75)';
-      G.I18n.rawCanvas(ctx, 'strokeText', this.tag, this.x, y);
+      ctx.strokeText(this.tag, this.x, y);
       ctx.fillStyle = this.dead ? '#ff8a96' : this.tagColor || '#fff';
-      G.I18n.rawCanvas(ctx, 'fillText', this.tag, this.x, y);
+      ctx.fillText(this.tag, this.x, y);
       if (this.dead) {
         ctx.font = '700 6px Pixelify,"Segoe UI",sans-serif';
         ctx.strokeText(this.revLabel || '', this.x, y - 8);

@@ -45,16 +45,8 @@ G.baseStartOf = dex => {
   return s ? s.start : G.Moves.startFor(G.DEX_BY[dex]);
 };
 
-/**
- * Ataques que se pueden elegir para empezar (Mejoras → Movimiento inicial): los suyos, sin potenciadores,
- * y siempre el de serie (aunque no sea de su tipo, como Confusión en Psyduck), para poder volver a él.
- */
-G.startChoices = dex => {
-  const ids = G.Moves.poolFor(G.DEX_BY[dex]).filter(id => G.Moves.BY_ID[id].kind !== 'buff');
-  const base = G.baseStartOf(dex);
-  if (!ids.includes(base)) ids.push(base);
-  return ids;
-};
+/** Ataques que se pueden elegir para empezar (Mejoras → Movimiento inicial): los suyos, sin potenciadores. */
+G.startChoices = dex => G.Moves.poolFor(G.DEX_BY[dex]).filter(id => G.Moves.BY_ID[id].kind !== 'buff');
 
 /**
  * Movimiento con el que empieza: el elegido con la mejora Movimiento inicial

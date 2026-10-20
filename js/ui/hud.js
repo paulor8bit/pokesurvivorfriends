@@ -264,38 +264,53 @@ G.HUD = (() => {
       const g = pl.slots[i] || [];
       const m = g[0];
       const fused = g.length > 1;
-      const on = i === pl.active;
       const x = sx + i * (S + GAP);
-      const y = on ? sy - 6 : sy;
-      // Tocar (o hacer clic en) un icono activa ese movimiento.
-      if (m) G.Touch.addButton(x, y, S, S, () => { if (G.Game.state === 'playing' && pl.active !== i) { pl.setActive(i); G.Audio.sfx('click'); } }, GAP / 2 + 3);
+      const y = sy;
       const col = m ? G.U.TYPE_COLOR[m.type] : '#4a5468';
 
       // fondo
       roundRect(ctx, x, y, S, S, 12);
-      ctx.fillStyle = on ? 'rgba(20,30,50,.95)' : 'rgba(10,16,28,.8)';
+      ctx.fillStyle = 'rgba(10,16,28,.8)';
       ctx.fill();
-      ctx.lineWidth = on ? 2.5 : fused || (m && m.evolved) ? 2 : 1.2;
+      ctx.lineWidth = fused || (m && m.evolved) ? 2 : 1.2;
       // Vínculo: borde rosa. Evolucionado: dorado.
-      ctx.strokeStyle = fused ? BOND : m && m.evolved ? '#ffd23f' : on ? col : 'rgba(140,170,210,.22)';
+      ctx.strokeStyle = fused ? BOND : m && m.evolved ? '#ffd23f' : 'rgba(140,170,210,.22)';
       ctx.stroke();
 
       if (!m) continue;
+
+      // Clic / toque: activa o desactiva cada movimiento (en una fusión, cada uno aparte).
+      const tap = (mv, bx, by, bw, bh) => G.Touch.addButton(bx, by, bw, bh, () => {
+        if (G.Game.state === 'playing') { pl.toggleMove(mv); G.Audio.sfx('click'); }
+      }, GAP / 2 + 3);
+      const offOverlay = (bx, by, bw, bh, r) => {
+        ctx.save();
+        roundRect(ctx, bx, by, bw, bh, r); ctx.clip();
+        ctx.fillStyle = 'rgba(6,10,20,.68)';
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.restore();
+      };
 
       if (fused) {
         // Vínculo: los movimientos en una cuadrícula de 2×2, cada uno con su recarga.
         const C = 22, P = (S - C * 2) / 3;
         g.forEach((gm, k) => {
           const cx = x + P + (k % 2) * (C + P), cy = y + P + Math.floor(k / 2) * (C + P);
+          tap(gm, cx, cy, C, C);
+          ctx.save();
+          if (gm.off) ctx.globalAlpha = 0.3;
           G.Icons.draw(ctx, 'move:' + gm.id, cx, cy, C);
+          ctx.restore();
           const f = cdOf(gm);
           if (f > 0) { ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(cx, cy, C, C * f); }
           if (gm.evolved) { ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 1; ctx.strokeRect(cx + 0.5, cy + 0.5, C - 1, C - 1); }
           // Destello al lanzarse.
           const fl = 1 - (performance.now() - (gm.castAt || 0)) / 180;
           if (fl > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (fl * 0.55).toFixed(2) + ')'; ctx.fillRect(cx, cy, C, C); }
+          if (gm.off) offOverlay(cx, cy, C, C, 5);
         });
       } else {
+        tap(m, x, y, S, S);
         // recarga: se vacía de abajo a arriba
         const cdFrac = cdOf(m);
         if (cdFrac > 0) {
@@ -307,7 +322,10 @@ G.HUD = (() => {
         }
 
         // emblema del tipo + insignia de la familia
+        ctx.save();
+        if (m.off) ctx.globalAlpha = 0.3;
         G.Icons.draw(ctx, 'move:' + m.id, x + (S - 32) / 2, y + (S - 32) / 2 - 2, 32);
+        ctx.restore();
 
         // nivel del movimiento (puntitos)
         const dots = m.def.maxLvl;
@@ -317,20 +335,14 @@ G.HUD = (() => {
           ctx.fillStyle = d < m.lvl ? col : 'rgba(255,255,255,.18)';
           ctx.fillRect(x + (S - tw) / 2 + d * (dw + dgap), y + S - 9, dw, 3);
         }
-      }
 
-      // tecla
-      ctx.font = F(800, 9);
-      ctx.fillStyle = fused ? BOND : on ? col : 'rgba(180,200,230,.6)';
-      ctx.textAlign = 'left';
-      ctx.fillText(String(i + 1), x + 3, y + 10);
-
-      // nombre encima del activo (con un vínculo: "Ascuas +2")
-      if (on) {
-        ctx.font = F(700, 10);
-        ctx.textAlign = 'center';
-        ctx.fillStyle = fused ? BOND : col;
-        ctx.fillText(fused ? G.T(m.name, 'move') + ' +' + (g.length - 1) : G.T(m.name, 'move'), x + S / 2, y - 7);
+        if (m.off) {
+          offOverlay(x, y, S, S, 12);
+          ctx.font = F(800, 10);
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#ff8a96';
+          ctx.fillText('OFF', x + S / 2, y + S / 2 + 3);
+        }
       }
     }
 
@@ -383,8 +395,8 @@ G.HUD = (() => {
       ctx.font = F(600, 10);
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(180,200,230,.55)';
-      ctx.fillText(touch ? 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo'
-                         : 'WASD moverse  ·  1-4 / Q / E o clic en un ataque para cambiarlo  ·  Esc pausa', w / 2, h - 4);
+      ctx.fillText(touch ? 'Arrastra el dedo para moverte'
+                         : 'WASD moverse  ·  Esc pausa', w / 2, h - 4);
     }
 
     ctx.restore();
@@ -408,7 +420,7 @@ G.HUD = (() => {
       const o = m.pl;
       ctx.font = F(800, 10);
       ctx.fillStyle = m.color;
-      G.I18n.rawCanvas(ctx, 'fillText', m.name, px, y + 9);
+      ctx.fillText(m.name, px, y + 9);
       const lx = px + 78;
       bar(ctx, lx, y + 1, 110, 8, o.dead ? 0 : o.hp / o.maxHp, o.dead ? '#ff5f6d' : '#5fe08a');
       if (o.dead) {
@@ -445,16 +457,16 @@ G.HUD = (() => {
       ctx.font = F(800, 14);
       ctx.textAlign = 'center';
       ctx.fillStyle = '#fff';
-      G.I18n.rawCanvas(ctx, 'fillText', m.name.charAt(0).toUpperCase(), 0, 5);
+      ctx.fillText(m.name.charAt(0).toUpperCase(), 0, 5);
       // Nombre y distancia: al lado contrario de la flecha, para que no se salga
       const lx = -Math.cos(a) * 30, ly = -Math.sin(a) * 26 + 4;
       ctx.font = F(800, 12);
-      const label = o.dead ? G.I18n.f('¡{x} necesita ayuda! · {x} m', m.name, metres) : m.name + ' · ' + metres + ' m';
+      const label = (o.dead ? '¡' + m.name + ' necesita ayuda! ' : m.name + ' ') + '· ' + metres + ' m';
       ctx.textAlign = Math.cos(a) > 0.3 ? 'right' : Math.cos(a) < -0.3 ? 'left' : 'center';
       ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.8)';
-      G.I18n.rawCanvas(ctx, 'strokeText', label, lx, ly);
+      ctx.strokeText(label, lx, ly);
       ctx.fillStyle = col;
-      G.I18n.rawCanvas(ctx, 'fillText', label, lx, ly);
+      ctx.fillText(label, lx, ly);
       ctx.restore();
     }
 

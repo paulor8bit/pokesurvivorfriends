@@ -147,13 +147,14 @@ G.Game = (() => {
     if (coop) {
       G.Coop.begin(coop, pl, coopApi);
       G.Social.setPlaying(true);
+    } else {
+      G.Bots.begin(pl);      // compañeros reclutados (sólo en solitario)
     }
     G.Camera.x = pl.x; G.Camera.y = pl.y; G.Camera.shake = 0;
     // Hojas de sprites locales: el compañero y los primeros enemigos.
     G.Sprites.preload([mon.dex], 8000, pl.shiny);
     G.Audio.music(G.BIOME_MUSIC[0]);
     // Para el ranking: el servidor apunta cuándo empieza la partida (anti-trampas).
-    if (!coop || G.Coop.isHost) G.Ranking.runStarted(coop ? 'g' : 's');
     deathT = 0;
 
     state = 'playing';
@@ -333,18 +334,9 @@ G.Game = (() => {
     G.Judgment.reset();
     G.Progress.event('runEnd', { time, level: pl.level, coins: pl.coins, types: pl.mon.types, group: coop });
     G.Progress.checkAch();
-    // A la nube al acabar la partida (como mucho cada hora); si la marca entra
-    // en un top (hoy, semana o mes), enseguida (abajo, tras subirla al ranking).
-    G.DB.commit('run');
+    // O progresso continua salvo localmente ao terminar a partida.
+    G.DB.commit();
     if (G.Social.me) G.Social.publishProfile();
-
-    // Ranking: en solitario cada uno lo suyo; en grupo lo sube el anfitrión.
-    const mark = { t: Math.floor(time), lv: pl.level, kills: pl.kills };
-    // Si la partida se ha tocado (ver clean()), no sube al ranking (sin avisar); lo demás, sí.
-    const ok = clean();
-    const sent = ok && !coop ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
-               : ok && wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
-    if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
 
     G.RunUI.showOver({
       dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
@@ -569,11 +561,7 @@ G.Game = (() => {
     }
     if (G.Input.tap('escape') || G.Input.tap('keyp')) { togglePause(); return; }
     if (state !== 'playing' || !pl) return;
-    for (let i = 0; i < 4; i++) {
-      if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) pl.setActive(i);
-    }
-    if (G.Input.tap('keyq')) pl.cycle(-1);
-    if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);
+    // (Ya no se alterna entre ataques: todos se lanzan a la vez.)
   }
 
   // ---------------- bucle ----------------
@@ -668,6 +656,8 @@ G.Game = (() => {
     if (coop) {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
       if (pl.dead) reviveTick(dt);
+    } else {
+      G.Bots.update(dt, pl, time);
     }
     G.Camera.follow(pl.x, pl.y, dt);
     G.World.update(dt, G.Camera);
@@ -777,7 +767,7 @@ G.Game = (() => {
     ctx.save();
     ctx.scale(G.Camera.scale, G.Camera.scale);
     G.Camera.apply(ctx);
-    drawScene(G.Camera, G.Coop.active ? [pl, ...G.Coop.puppets()] : [pl]);
+    drawScene(G.Camera, G.Coop.active ? [pl, ...G.Coop.puppets()] : [pl, ...G.Bots.list()]);
     G.Projectiles.draw(ctx);
     G.Combat.drawAirFields(ctx);
     G.FX.draw(ctx);
@@ -930,17 +920,17 @@ G.Game = (() => {
 G.Flow = {
   boot() {
     G.UI.initChrome();
-    G.LoginUI.init(); G.TestUI.init(); G.MenuUI.init(); G.GachaUI.init();
-    G.SocialUI.init(); G.RankingUI.init(); G.ModUI.init(); G.GoalsUI.init(); G.ProfileUI.init(); G.SettingsUI.init(); G.SupportUI.init(); G.NewsUI.init(); G.Updater.init();
+    G.TestUI.init(); G.MenuUI.init(); G.GachaUI.init();
+    G.SocialUI.init(); G.GoalsUI.init(); G.ProfileUI.init(); G.SettingsUI.init(); G.NewsUI.init(); G.Updater.init();
     // Tu nombre arriba a la derecha abre tu perfil.
     document.getElementById('user-pill').onclick = () => G.GoalsUI.open('profile');
     G.Audio.music('village');     // suena tras el primer clic (lo exige el navegador)
     G.Game.init();
     // La base de datos (nube o local) recupera la sesión anterior.
-    G.DB.ready().then(restored => {
+    G.DB.ready().then(() => {
       document.getElementById('boot').classList.add('hidden');
       // En otra tarea: crear el sonido para comprobarlo cuesta ~60 ms y no debe bloquear la carga.
-      setTimeout(() => this.tapToStart(() => { if (restored) this.afterLogin(); else this.toLogin(); }), 0);
+      setTimeout(() => this.tapToStart(() => this.afterLoad()), 0);
     });
   },
   /**
@@ -964,8 +954,7 @@ G.Flow = {
     el.addEventListener('click', go);
     addEventListener('keydown', go, true);
   },
-  toLogin() { G.Audio.music('village'); G.LoginUI.open(); },
-  afterLogin() {
+  afterLoad() {
     G.Audio.music('village');
     if (!G.DB.save.partner) G.TestUI.start();
     else this.goMenu();
@@ -974,14 +963,14 @@ G.Flow = {
     if (G.Game.state !== 'ui') G.Game.toUI();
     G.Audio.music('village');
     G.MenuUI.open();
-    if (!G.LoginUI.updateNotices()) G.LoginUI.offerRecovery();
+    G.SocialUI.consumeInvite();
   },
   /** Al cerrar el resumen: a la sala si sigues en una, si no al menú. */
   afterRun() {
     if (G.Social.room) {
       if (G.Game.state !== 'ui') G.Game.toUI();
       G.Audio.music('village');
-      if (G.Social.room.isHost) G.Social.setOpen(true);
+      if (G.Social.room.isHost) G.Social.setOpen(true).catch(() => {});
       G.LobbyUI.open();
     } else this.goMenu();
   },

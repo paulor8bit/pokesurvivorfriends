@@ -199,8 +199,8 @@ G.I18n.add({
   '¡{x} necesita ayuda! · {x} m': '{x} needs help! · {x} m', 'CAÍDO': 'DOWN', 'Quédate a su lado': 'Stay by their side',
   'Grieta · {x} m · {x} s': 'Rift · {x} m · {x} s', 'DERROTADOS ·': 'DEFEATED ·', 'MONEDAS': 'COINS',
   '{x} · {x} DERROTADOS · {x} MONEDAS': '{x} · {x} DEFEATED · {x} COINS',
-  'Arrastra el dedo para moverte · toca un ataque para cambiarlo': 'Drag your finger to move · tap a move to switch',
-  'WASD moverse · 1-4 / Q / E o clic en un ataque para cambiarlo · Esc pausa': 'WASD move · 1-4 / Q / E or click a move to switch · Esc pause',
+  'Arrastra el dedo para moverte': 'Drag your finger to move',
+  'WASD moverse · Esc pausa': 'WASD move · Esc pause',
   'El anfitrión ha terminado la partida': 'The host has ended the game', 'Se ha perdido la conexión con el anfitrión.': 'Lost connection to the host.',
 
   // ---------------- pausa y fin ----------------
@@ -214,6 +214,12 @@ G.I18n.add({
   // ---------------- inicio de sesión y test ----------------
   'Mundo Misterioso': 'Mystery Dungeon', 'Entrar': 'Log in', 'Crear cuenta': 'Sign up', 'Nombre': 'Name', 'Contraseña': 'Password',
   'Entrar con Google': 'Sign in with Google', 'Jugar como invitado': 'Play as guest', '3-16 letras, números o _': '3-16 letters, numbers or _',
+  'Equipo': 'Team', 'Recluta Pokémon que luchen contigo': 'Recruit Pokémon to fight with you',
+  'Recluta a tus Pokémon para que luchen a tu lado. Los huecos se desbloquean con monedas.': 'Recruit your Pokémon to fight by your side. Slots unlock with coins.',
+  'Hueco bloqueado': 'Locked slot', 'Desbloquear': 'Unlock', 'Hueco libre': 'Empty slot', 'Elegir Pokémon': 'Choose Pokémon',
+  'Cambiar': 'Change', 'Quitar': 'Remove', 'Elige un Pokémon de tu colección:': 'Choose a Pokémon from your collection:',
+  'Aún no tienes Pokémon. Consíguelos en el gacha.': 'You have no Pokémon yet. Get some in the gacha.',
+  'Ese Pokémon ya es un compañero.': 'That Pokémon is already a companion.', 'Te faltan monedas.': 'Not enough coins.', 'Ya tienes todos los huecos.': 'You already have all slots.',
   'Sobrevive a las hordas con tu compañero Pokémon · gratis, en PC y móvil': 'Survive the hordes with your partner Pokémon · free, on PC and mobile',
   'Juego de supervivencia con Pokémon, gratis en el navegador y en el móvil.': 'A Pokémon survival game, free in your browser and on mobile.',
   'Cargando…': 'Loading…', 'Guía': 'Guide', 'Aviso legal y privacidad': 'Legal notice & privacy',
@@ -414,7 +420,7 @@ G.I18n.add({
   'En móvil o tablet': 'On mobile or tablet', 'En PC': 'On PC', 'Tamaño del joystick': 'Joystick size', 'Cuánto hay que arrastrar el dedo.': 'How far you need to drag your finger.',
   'Pequeño': 'Small', 'Normal': 'Normal', 'Grande': 'Large', 'o flechas': 'or arrow keys', 'moverse': 'move', 'o clic en el icono': 'or click its icon', 'elegir ataque': 'choose move',
   'ataque anterior / siguiente': 'previous / next move', 'elegir carta al subir de nivel': 'choose a card when leveling up',
-  'Pon el dedo en cualquier parte y arrastra para moverte: el joystick aparece donde tocas. Toca un ataque de abajo para cambiarlo y el botón de arriba a la derecha para pausar. Se juega en horizontal.': 'Put your finger anywhere and drag to move: the joystick appears where you touch. Tap a move at the bottom to switch to it and the top-right button to pause. Play in landscape.',
+  'Pon el dedo en cualquier parte y arrastra para moverte: el joystick aparece donde tocas. Usa el botón de arriba a la derecha para pausar. Se juega en horizontal.': 'Put your finger anywhere and drag to move: the joystick appears where you touch. Use the top-right button to pause. Play in landscape.',
   'Apodo': 'Nickname', 'Es único y no se puede cambiar.': 'It\'s unique and can\'t be changed.', 'Tipo de cuenta': 'Account type', 'Partida': 'Save',
   'Cuenta de este navegador': 'This browser\'s account', 'Nombre y contraseña': 'Name and password', 'Google': 'Google',
   'Cerrar sesión': 'Log out', 'Borrar cuenta': 'Delete account', 'Crear cuenta o entrar': 'Sign up or log in',
@@ -423,7 +429,7 @@ G.I18n.add({
   'Mando conectado': 'Controller connected', 'Con mando': 'With a controller', 'Usar mando': 'Use controller',
   'Mando conectado:': 'Controller connected:', 'Vibración': 'Vibration',
   'Xbox, PlayStation, Switch y la mayoría de mandos USB o Bluetooth. Conéctalo y pulsa cualquier botón.': 'Xbox, PlayStation, Switch and most USB or Bluetooth controllers. Connect it and press any button.',
-  'Moverte, cambiar de ataque y manejar los menús con el mando.': 'Move, switch attacks and use the menus with a controller.',
+  'Moverte y manejar los menús con el mando.': 'Move and use the menus with a controller.',
   'El mando vibra al recibir daño (si el mando y el navegador lo permiten).': 'The controller vibrates when you take damage (if your controller and browser support it).',
   'Stick izq.': 'Left stick', 'Cruceta': 'D-pad', 'Stick der.': 'Right stick', 'moverse · elegir en los menús': 'move · choose in menus',
   'pulsar (en los menús) · saltar la animación de Arceus': 'press (in menus) · skip the Arceus cutscene',
@@ -749,14 +755,4 @@ G.I18n.add({
   'Reportar marca sospechosa': 'Report suspicious record', 'Ya la has reportado': 'You already reported it',
   'Ya has reportado esta marca': 'You already reported this record',
   '¿Reportar la marca de {x} como trampa?': "Report {x}'s record as cheating?", 'Gracias: la revisaremos': 'Thanks: we will review it'
-,
-
-  // ---------------- idiomas nuevos (19-10-2026) ----------------
-  'PokéSurvivor – Juego Pokémon gratis online estilo Survivor.io': 'PokéSurvivor – Free online Pokémon survival game (Survivor.io style)',
-  'Tipo': 'Type', 'Nuevo': 'New', 'Cambios': 'Changes', 'Arreglos': 'Fixes', 'Entendido': 'Got it',
-  // Frases del ranking en francés, italiano... (en inglés se montan enteras en ranking-ui.js)
-  'Tu mejor puesto: {x}': 'Your best rank: {x}',
-  'Aún no estás en el top 50. Tu puesto está en Histórico.': 'You are not in the top 50 yet. Your rank is in All-time.',
-  'Aún no tienes marca.': 'You do not have a record yet.',
-  'Folagor, Sekiam, PokeAlex: ¿un hueco?': 'Folagor, Sekiam, PokeAlex: room for one more?'
 });

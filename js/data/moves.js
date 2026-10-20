@@ -27,7 +27,7 @@
  *   shove       onda alrededor que daña y aparta a los enemigos
  *   stun        zona con aviso que daña y deja aturdidos (quietos) `stun` s
  *
- * Sólo el movimiento ACTIVO se ejecuta. Se cambia con 1-4 / Q / E.
+ * Todos los movimientos se ejecutan a la vez (cada uno con su recarga).
  *
  * El icono no se guarda aquí: G.Icons lo compone (emblema del tipo +
  * insignia de la familia), ver ui/icons.js.
@@ -624,15 +624,6 @@
     'rapid-spin', 'flame-charge', 'seed-bomb', 'sand-tomb', 'magnitude', 'u-turn', 'rock-tomb', 'ice-shard',
     'rolling-kick', 'dynamic-punch', 'shadow-sneak', 'dragon-claw', 'outrage', 'play-rough', 'gyro-ball',
     'sucker-punch', 'night-slash']);
-
-  // Los que disparan bolas necesitan count y spread de base: las mejoras los
-  // multiplican y, sin ellos, "+1 proyectil" no sumaba ninguno y el abanico se
-  // quedaba en 1,3 rad (Bomba Ácida evolucionada salía hacia los lados).
-  for (const m of RAW) {
-    if (m.kind !== 'projectile' && m.kind !== 'homing' && m.kind !== 'bounce') continue;
-    if (m.count == null) m.count = 1;
-    if (m.spread == null) m.spread = 0.12;
-  }
 
   const BY_ID = {};
   for (const m of RAW) {

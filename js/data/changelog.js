@@ -6,30 +6,18 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
-  { d: '2026-10-20', title: ['Cooperativo más seguro y arreglos de ataques', 'Safer co-op and move fixes'], fix: [
-    ['Cooperativo: un jugador con el juego trucado ya no puede colgar la partida de los demás mandando números imposibles (una experiencia infinita dejaba congelado al anfitrión y un efecto gigante, a los invitados).',
-     'Co-op: a player with a tampered game can no longer freeze the others by sending impossible numbers (infinite experience froze the host and a giant effect froze the guests).'],
-    ['Mejoras: al cambiar de compañero, la pantalla de mejoras se abre ya con el nuevo y no con el último que habías mirado.',
-     'Upgrades: after changing your partner, the upgrades screen now opens on the new one instead of the last one you had looked at.'],
-    ['Cooperativo: Viento Aciago, Bucle Arena y Torbellino de un invitado ya atraen a los enemigos (sólo atraían los del anfitrión).',
-     'Co-op: a guest\'s Ominous Wind, Sand Tomb and Whirlpool now pull enemies in (only the host\'s did).'],
-    ['Cooperativo: el Infortunio de un invitado ya hace su daño extra a los enemigos quemados, envenenados o frenados.',
-     'Co-op: a guest\'s Hex now deals its extra damage to burned, poisoned or slowed enemies.'],
-    ['Bomba Ácida, Bola Voltio, Bomba Germen, Rayo Señal, Joya de Luz, Bola Neblina, Energibola, Canto Helado, Sombra Vil y Beso Drenaje: al evolucionar, los disparos salían hacia los lados y no daban a nadie. Ahora salen hacia delante, y la mejora «+1 proyectil» ya añade uno (antes no añadía ninguno).',
-     'Acid Spray, Electro Ball, Seed Bomb, Signal Beam, Power Gem, Mist Ball, Energy Ball, Ice Shard, Shadow Sneak and Draining Kiss: once evolved, the shots flew off to the sides and hit nothing. Now they go forward, and the "+1 projectile" upgrade really adds one (it added none before).'],
-    ['Cooperativo: si a alguien se le cerraban las cartas de subida de nivel sin haber elegido (podía pasar eligiendo muy deprisa), ahora se le vuelven a abrir y los demás ya no se quedan esperándole.',
-     'Co-op: if someone\'s level-up cards closed before they had picked (it could happen when picking very fast), they now open again and the others are no longer left waiting for them.']
-  ], chg: [
-    ['En el móvil ya no está la opción «Apuntar a mano» (no funcionaba con la pantalla táctil): los ataques siempre apuntan solos.',
-     'On mobile the "Manual aim" option is gone (it did not work with the touch screen): moves always aim on their own.'],
-    ['Ranking por Pokémon: ahora cuentan las partidas de 5 minutos o más (los demás rankings siguen desde 2 minutos).',
-     'Per-Pokémon leaderboard: runs now count from 5 minutes on (the other leaderboards still from 2 minutes).'],
-    ['Amigos: ya no se ve quién está en línea, y puedes invitar a una sala a cualquier amigo (si no entra, la invitación caduca sola a los 3 minutos).',
-     'Friends: you no longer see who is online, and you can invite any friend to a room (if they do not join, the invite expires on its own after 3 minutes).'],
-    ['Guardado en la nube: ahora la partida sólo se sube a la nube cuando pulsas el botón Guardar de arriba (y antes de una actualización del juego). En este navegador se sigue guardando todo al momento. Si juegas en otro aparato o vas a borrar los datos del navegador, pulsa Guardar antes.',
-     'Cloud save: your game is now only uploaded to the cloud when you press the Save button at the top (and before a game update). Everything is still saved instantly in this browser. If you play on another device or are about to clear your browser data, press Save first.'],
-    ['Las solicitudes de amistad nuevas se ven al abrir Amigos.',
-     'New friend requests show up when you open Friends.']
+  { d: '2026-10-20', title: ['Equipo y partidas con amigos', 'Team and games with friends'], new: [
+    ['Aplicación de escritorio para Windows: juega y comparte la sala desde una ventana propia, sin abrir terminales ni crear cuentas.',
+     'Windows desktop app: play and share your room from its own window, without terminals or accounts.'],
+    ['Cooperativo sin cuenta: crea una sala y comparte su enlace o código con hasta tres amigos. Sólo hace falta un apodo.',
+     'Account-free co-op: create a room and share its link or code with up to three friends. All you need is a nickname.'],
+    ['Equipo (antes Amigos): recluta a Pokémon de tu colección para que luchen a tu lado. Los huecos se desbloquean con monedas (el primero, 100).',
+     'Team (formerly Friends): recruit Pokémon from your collection to fight by your side. Slots unlock with coins (the first one, 100).']
+  ], fix: [
+    ['Fork independiente de Paulinho Ricardo (gatinho.punkeca): guardado local sin cuentas y limpieza de los servicios antiguos.',
+     'Independent fork by Paulinho Ricardo (gatinho.punkeca): local saves without accounts and removal of legacy services.'],
+    ['Aplicación de Windows: corregidos los fallos de apertura y reapertura. Los archivos se preparan una sola vez; abrir el juego de nuevo recupera su ventana.',
+     'Windows app: fixed startup and reopening failures. Files are prepared only once; opening the game again brings back its window.']
   ] },
   { d: '2026-10-19', title: ['38 ataques nuevos', '38 new moves'], new: [
     ['38 ataques nuevos: ahora todos los tipos tienen 5 o más (Roca, Lucha, Dragón y Hada tenían sólo 2). Entre ellos Hiperrayo, Rayo Solar, Magnitud, Torbellino, Onda Trueno, Enfado, Carantoña, Golpe Bajo... cada uno con su evolución.',
@@ -37,25 +25,18 @@ G.CHANGELOG = [
     ['Formas nuevas de atacar: disparos que persiguen al enemigo o rebotan entre ellos, rayos que se cargan, giros que golpean todo alrededor, ondas que avanzan por el suelo, remolinos que atraen a los enemigos, ondas que los apartan y zonas que los dejan aturdidos.',
      'New ways to attack: shots that chase enemies or bounce between them, beams you charge up, spins that hit everything around you, shockwaves that travel along the ground, vortexes that pull enemies in, waves that push them away and zones that stun them.'],
     ['Mejora nueva, Movimiento inicial: se compra una vez por Pokémon y luego eliges gratis con qué ataque empieza la partida.',
-     'New upgrade, Starting move: buy it once per Pokémon and then choose for free which move it starts the run with.'],
-    ['Idiomas nuevos: francés, italiano, portugués de Brasil, chino simplificado y chino tradicional, en Ajustes > Gráficos > Idioma. Gracias a quienes los tradujeron.',
-     'New languages: French, Italian, Brazilian Portuguese, Simplified Chinese and Traditional Chinese, in Settings > Graphics > Language. Thanks to everyone who translated them.'],
-    ['Una frase de broma en el título del menú principal, como las de Minecraft.',
-     'A joke line on the main menu title, like the ones in Minecraft.']
+     'New upgrade, Starting move: buy it once per Pokémon and then choose for free which move it starts the run with.']
   ], chg: [
     ['Los Pokémon de un solo tipo pegan un 20 % más con los ataques de su tipo, para compensar que tienen menos variedad.',
      'Single-type Pokémon deal 20% more damage with moves of their type, to make up for having less variety.'],
     ['Al aprender un ataque nuevo ya no se cambia solo a él: sigues con el que estabas usando y cambias cuando tú quieras.',
      'Learning a new move no longer switches to it on its own: you keep the one you were using and switch whenever you want.'],
-    ['El juego sólo se puede jugar en su web oficial, pokesurvivor.com: si otra web lo mete dentro de la suya (por ejemplo, para ponerle anuncios alrededor), sale un aviso con un botón para ir a la oficial.',
-     'The game can only be played on its official website, pokesurvivor.com: if another site embeds it in its own page (for example, to put ads around it), a notice appears with a button to go to the official one.']
-  ], fix: [
-    ['Movimiento inicial: ya se puede volver al ataque de serie aunque no sea de su tipo (por ejemplo Confusión en Psyduck).',
-     'Starting move: you can now go back to the default move even if it is not of its type (for example Confusion on Psyduck).'],
-    ['Cooperativo: el jefe que tocaba al volver de una grieta podía salir a miles de metros, donde nadie lo encontraba, y la partida se quedaba sin más grietas. Ahora sale cerca, y si un jefe se queda lejísimos de todos, vuelve a aparecer cerca a los pocos segundos.',
-     'Co-op: the boss due when coming back from a rift could appear thousands of metres away, where nobody could find it, and the run got no more rifts. Now it appears nearby, and if a boss ends up very far from everyone, it shows up close again after a few seconds.'],
-    ['Al recargar, a veces la página nueva se juntaba con los estilos viejos guardados en el navegador (por ejemplo, la frase del título salía en grande pegada a «PokéSurvivor»). Ya no pasa.',
-     'When reloading, the new page sometimes got mixed with the old styles saved in the browser (for example, the title line showed up big and stuck to "PokéSurvivor"). That no longer happens.']
+    ['Todos los ataques se lanzan a la vez, sin tener que alternar: ya no hay movimiento activo y cada ataque sale solo con su propia recarga, como en Vampire Survivors.',
+     'All moves now fire at the same time, with no switching: there is no active move anymore and each move fires on its own cooldown, like in Vampire Survivors.'],
+    ['Puedes activar o desactivar cada ataque tocando su icono de abajo (o con clic): los desactivados se ven apagados y no se lanzan.',
+     'You can turn each move on or off by tapping its icon at the bottom (or clicking it): disabled ones look dimmed and don\'t fire.'],
+    ['Abierto desde un archivo (fuera de la web oficial) ya no se pide cuenta: se juega con una partida local que se guarda sola en el navegador.',
+     'Opened from a file (off the official site) it no longer asks for an account: you play with a local save that stores itself in the browser.']
   ] },
   { d: '2026-10-18', title: ['Físico y especial, mando, botón Guardar y rankings desde cero', 'Physical and special, controller, Save button and fresh leaderboards'], new: [
     ['Ataques físicos y especiales, como en los juegos: cada Pokémon tiene su Ataque, Ataque Especial, Defensa y Defensa Especial. Los ataques físicos pegan con su Ataque y los especiales con su Ataque Especial: Machamp pega fuerte con Golpe Kárate y flojo con Bola Sombra. Con los de su lado bueno pega lo mismo que antes. Al subir de nivel, cada carta dice si el ataque es físico o especial y cuánto rinde con tu Pokémon, y en la colección se ven todas sus estadísticas.',

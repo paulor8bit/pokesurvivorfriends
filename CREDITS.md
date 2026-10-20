@@ -1,5 +1,12 @@
 # Créditos
 
+## Fork independente
+
+Fork criado e mantido por **Paulinho Ricardo — gatinho.punkeca**.
+
+Base original: **JPTER78**, [PokéSurvivor](https://github.com/JPTER78/pokesurvivor).
+Os créditos e avisos de licença dos autores e artistas originais são preservados abaixo.
+
 ## Sprites
 
 Los sprites estilo *Pokémon Mundo Misterioso* vienen de

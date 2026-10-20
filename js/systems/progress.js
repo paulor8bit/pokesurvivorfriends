@@ -49,7 +49,7 @@ G.Progress = (() => {
   /** Crea las misiones del día / semana si han cambiado. */
   function ensure(s) {
     if (!s) return;
-    const ids = G.Ranking.periodIds();
+    const ids = G.Calendar.periodIds();
     const key = String(s.created || 0);
     s.missions = s.missions || {};
     const M = s.missions;
