@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-21', title: ['Poderes de la Arena', 'Arena powers'], new: [
+    ['Arena: compra nuevos ataques por 150 monedas para cada Pokémon y configura sus cuatro teclas antes del campeonato. Las compras se conservan y equipar ataques aprendidos es gratis. Tu compañero bot también puede entrenar; cada invitado usa sus propios poderes. El tipo, el daño y la recarga del poder se aplican en combate.',
+     'Arena: buy new moves for 150 coins per Pokémon and configure four attack keys before the tournament. Purchases persist and equipping learned moves is free. Your bot partner can train too; each guest uses their own powers. Move type, damage and cooldown apply in combat.']
+  ] },
   { d: '2026-10-21', title: ['Equilibrio de la Arena', 'Arena balance'], fix: [
     ['Arena: los rivales ya no encadenan los cuatro ataques al instante ni se concentran siempre en el jugador. Tienen tiempo de reacción, menos daño y disparos más lentos, con dificultad progresiva hasta la final. Hay una breve protección entre golpes y las manzanas aparecen antes y con más frecuencia.',
      'Arena: rivals no longer chain all four attacks instantly or always focus the player. They have reaction time, lower damage and slower shots, with difficulty increasing toward the final. Brief protection separates hits, and apples appear earlier and more often.']

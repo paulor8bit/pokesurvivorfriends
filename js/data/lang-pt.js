@@ -4,6 +4,8 @@
  * são os oficiais em português.
  */
 G.I18n.add({
+  'Poderes de la Arena': 'Poderes da Arena',
+  'Arena: compra nuevos ataques por 150 monedas para cada Pokémon y configura sus cuatro teclas antes del campeonato. Las compras se conservan y equipar ataques aprendidos es gratis. Tu compañero bot también puede entrenar; cada invitado usa sus propios poderes. El tipo, el daño y la recarga del poder se aplican en combate.': 'Arena: compre novos ataques por 150 moedas para cada Pokémon e configure as quatro teclas antes do campeonato. As compras ficam salvas e equipar ataques aprendidos é grátis. Seu parceiro bot também pode treinar; cada convidado usa seus próprios poderes. O tipo, o dano e a recarga do poder são aplicados no combate.',
   'Equilibrio de la Arena': 'Equilíbrio da Arena',
   'Arena: los rivales ya no encadenan los cuatro ataques al instante ni se concentran siempre en el jugador. Tienen tiempo de reacción, menos daño y disparos más lentos, con dificultad progresiva hasta la final. Hay una breve protección entre golpes y las manzanas aparecen antes y con más frecuencia.': 'Arena: os rivais não disparam mais os quatro ataques de uma vez nem focam sempre no jogador. Agora têm tempo de reação, dano menor e disparos mais lentos, com dificuldade crescente até a final. Há uma breve proteção entre golpes, e as maçãs aparecem mais cedo e com maior frequência.',
   'Selección de la Arena': 'Seleção da Arena',

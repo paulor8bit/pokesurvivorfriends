@@ -8,6 +8,11 @@
     { role: 'Explosão', cooldown: 7, damage: 40, range: 155 }
   ];
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+  function skillFor(move, index) {
+    const base = SKILLS[index];
+    return { ...base, damage: Math.round(base.damage * (Number.isFinite(move?.power) ? clamp(move.power / 30, 0.85, 1.35) : 1)),
+      cooldown: Math.round(base.cooldown * (Number.isFinite(move?.tempo) ? clamp(move.tempo / 3, 0.9, 1.25) : 1) * 100) / 100 };
+  }
   class Tournament {
     constructor(teams, seed = 1, typeMultiplier = () => 1) {
       if (teams.length !== 8 || teams.some(t => t.fighters.length !== 2)) throw Error('A Arena precisa de oito duplas.');
@@ -57,7 +62,7 @@
       this.event('hit', { x: target.x, y: target.y, amount: Math.ceil(before - target.hp), type, fighter: target.id, faint: before > 0 && target.hp <= 0 });
     }
     cast(f, index) {
-      const s = this.state, skill = SKILLS[index], target = this.target(f);
+      const s = this.state, skill = skillFor(f.moves[index], index), target = this.target(f);
       if (s.phase !== 'battle' || f.hp <= 0 || f.cooldowns[index] > 0 || !target) return false;
       f.cooldowns[index] = skill.cooldown; f.cast = 0.3;
       f.angle = Math.atan2(target.y - f.y, target.x - f.x);
@@ -160,7 +165,7 @@
     }
     rematch() { if (this.state.phase !== 'draw') return false; this.state.phase = 'bracket'; return this.begin(); }
   }
-  const api = { Tournament, SKILLS, WIDTH, HEIGHT };
+  const api = { Tournament, SKILLS, skillFor, WIDTH, HEIGHT };
   if (typeof G !== 'undefined') G.ArenaRules = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

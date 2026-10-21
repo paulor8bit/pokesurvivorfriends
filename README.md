@@ -47,8 +47,13 @@ Os ataques miram o rival mais próximo: disparo, rajada, investida e explosão.
 Maçãs aparecem durante a luta e recuperam **25% do HP** de quem as pega,
 incluindo os rivais. Uma dupla perde quando os dois Pokémon caem. Cada rodada
 começa com HP completo. Após 90 segundos começa a prorrogação com perda de HP;
-um empate permite repetir a batalha. A Arena não gasta moedas nem modifica
-a coleção ou o progresso do modo sobrevivência. O anfitrião deve manter o
+um empate permite repetir a batalha. Participar do campeonato é grátis.
+Em **Aprender e equipar poderes**, compre ataques por **150 moedas** para o
+Pokémon escolhido e configure as quatro teclas antes de começar. As compras
+ficam salvas por Pokémon; trocar poderes aprendidos é grátis. A loja também
+permite treinar o parceiro bot. Cada convidado leva os próprios poderes,
+sem compartilhar moedas ou compras com o anfitrião. O treinamento da Arena
+é separado dos ataques e melhorias da sobrevivência. O anfitrião deve manter o
 aplicativo aberto; ao sair, a sala é encerrada.
 
 Os rivais têm tempo de reação e usam um ataque por vez, dividindo os alvos

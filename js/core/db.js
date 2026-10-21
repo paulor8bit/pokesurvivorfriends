@@ -34,6 +34,7 @@ G.DB = (() => {
       pity: {},               // generación del banner -> tiradas sin ★5
       legends: {},            // dex -> fecha: legendarios vencidos en grietas
       arenas: {},             // tipo -> fecha: arenas de grieta ganadas
+      arenaTraining: {},      // Pokémon -> poderes comprados e quatro ataques da Arena
       itemsFound: {},         // id -> fecha: objetos equipables encontrados
       evoMoves: {},           // id -> fecha: movimientos evolucionados alguna vez
       ach: {},                // id -> fecha: logros conseguidos
@@ -117,6 +118,14 @@ G.DB = (() => {
         if (!valid(id) || seen.has(id)) return null;
         seen.add(id); return id;
       });
+    }
+    if (!isObj(s.arenaTraining)) s.arenaTraining = {};
+    for (const dex of Object.keys(s.arenaTraining)) {
+      const p = s.arenaTraining[dex];
+      if (!isObj(p) || (G.DEX_BY && !G.DEX_BY[dex])) { delete s.arenaTraining[dex]; continue; }
+      const valid = id => typeof id === 'string' && (!G.Moves || (G.Moves.BY_ID[id] && G.Moves.BY_ID[id].kind !== 'buff'));
+      p.learned = [...new Set((Array.isArray(p.learned) ? p.learned : []).filter(valid))];
+      p.loadout = (Array.isArray(p.loadout) ? p.loadout : []).slice(0, 4).map(id => valid(id) && p.learned.includes(id) ? id : null);
     }
     // Atajos: 4 huecos con un movimiento que exista (o null), sin repetir.
     if (s.pbind && typeof s.pbind === 'object') {
@@ -256,6 +265,12 @@ G.DB = (() => {
         current.xp = Math.max(current.xp || 0, past.xp || 0);
         current.learned = [...new Set([...(current.learned || []), ...(past.learned || [])])];
       }
+    }
+    r.arenaTraining ||= {};
+    for (const [dex, past] of Object.entries(older.arenaTraining || {})) {
+      const current = r.arenaTraining[dex];
+      if (!current) r.arenaTraining[dex] = JSON.parse(JSON.stringify(past));
+      else current.learned = [...new Set([...(current.learned || []), ...(past.learned || [])])];
     }
     // Lo conseguido nunca se pierde: unión de legendarios, arenas, objetos, logros...
     for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach']) {

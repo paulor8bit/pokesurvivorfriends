@@ -1,6 +1,43 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { Tournament } = require('../js/systems/arena');
+const vm = require('node:vm'), fs = require('node:fs'), path = require('node:path');
+async function powers(data = new Map(), blocked = false) {
+  const G = { DEX_BY: { 25: { dex: 25, types: ['electric'] }, 4: { dex: 4, types: ['fire'] } }, STARTERS: [{ dex: 25 }, { dex: 4 }] };
+  const context = vm.createContext({ G, console, addEventListener() {}, localStorage: {
+    getItem: k => data.get(k) ?? null, setItem: (k, v) => { if (blocked) throw Error('Storage blocked'); data.set(k, v); }
+  } });
+  for (const f of ['data/moves.js', 'core/db.js', 'systems/arena-powers.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../js', f), 'utf8'), context);
+  await G.DB.ready(); return G;
+}
+test('Arena powers: purchases charge once per Pokémon, persist, swap free and never change survival training', async () => {
+  const data = new Map(), G = await powers(data), P = G.ArenaPowers;
+  const candidate = P.pool(25).find(id => !P.profile(25).learned.includes(id));
+  const survival = JSON.stringify({ bots: G.DB.save.bots, upgrades: G.DB.save.pupg, start: G.DB.save.pstart });
+  const coins = G.DB.save.coins;
+  assert.equal(P.equip(25, 0, candidate).cost, 150); assert.equal(G.DB.save.coins, coins - 150);
+  assert.equal(P.equip(25, 1, candidate).cost, 0); assert.equal(new Set(P.profile(25).loadout).size, 4);
+  const reloaded = await powers(data); assert.ok(reloaded.ArenaPowers.profile(25).learned.includes(candidate));
+  assert.equal(reloaded.ArenaPowers.profile(25).loadout[1], candidate);
+  assert.equal(reloaded.DB.save.coins, coins - 150);
+  assert.equal(JSON.stringify({ bots: G.DB.save.bots, upgrades: G.DB.save.pupg, start: G.DB.save.pstart }), survival);
+  const snapshot = JSON.parse(JSON.stringify(G.DB.save));
+  G.DB.save.arenaTraining = {}; G.DB.save.updated += 1;
+  assert.ok(G.DB.merge(G.DB.save, snapshot).arenaTraining[25].learned.includes(candidate));
+});
+test('Arena powers: invalid moves, insufficient funds and failed storage cannot spend coins or unlock powers', async () => {
+  const G = await powers(), P = G.ArenaPowers, candidate = P.pool(25).find(id => !P.profile(25).learned.includes(id));
+  for (const [dex, slot, id] of [[999, 0, candidate], [25, 4, candidate], [25, 0, 'ember'], [25, 0, 'missing']]) assert.equal(P.equip(dex, slot, id).ok, false);
+  G.DB.save.coins = 149; assert.equal(P.equip(25, 0, candidate).ok, false); assert.equal(G.DB.save.coins, 149);
+  const blocked = await powers(new Map(), true), balance = blocked.DB.save.coins;
+  assert.equal(blocked.ArenaPowers.equip(25, 0, candidate).ok, false); assert.equal(blocked.DB.save.coins, balance);
+  assert.equal(blocked.ArenaPowers.profile(25).learned.includes(candidate), false);
+});
+test('Arena powers: equipped move attributes determine authoritative damage and cooldown', () => {
+  const e = tournament(); e.state.teams[0].fighters[0].moves[0] = { id: 'power', type: 'fire', power: 40, tempo: 4 };
+  e.begin(); const f = e.state.fighters[0]; e.cast(f, 0);
+  assert.equal(f.cooldowns[0], 0.94); assert.equal(e.state.shots[0].damage, 23); assert.equal(e.state.shots[0].type, 'fire');
+});
 function tournament() {
   const teams = Array.from({ length: 8 }, (_, t) => ({ name: 'Dupla ' + t, fighters: [0, 1].map(slot => ({ dex: 25, name: 'Pikachu', types: ['electric'], human: t === 0,
     moves: Array.from({ length: 4 }, () => ({ type: 'electric', name: 'Choque' })) })) }));

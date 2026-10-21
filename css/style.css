@@ -948,6 +948,15 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .arena-preview { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 18px 0; }
 .arena-preview > div { padding: 12px 9px; background: #102a37; border: 1px solid #2d5361; border-radius: 10px; }
 .arena-preview small { display: block; margin-top: 6px; color: #adccda; }
+.arena-shop { border: 1px solid #477284; border-radius: 10px; padding: 14px; margin: 14px 0; background: #0c2435; }
+.arena-shop summary { cursor: pointer; color: var(--gold); font-size: 18px; padding: 4px 0; }
+.arena-shop label { display: block; margin-top: 14px; }
+.arena-shop select { margin-left: 10px; padding: 8px; }
+.arena-power-slots { display: flex; flex-wrap: wrap; gap: 8px; }
+.arena-power-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+.arena-power-card { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; white-space: normal; padding: 12px; }
+.arena-power-card small { color: #adccda; font-size: 12px; }
+.arena-power-card b { color: var(--gold); font-size: 12px; }
 .arena-preview > div > .ico { margin-right: 6px; vertical-align: middle; }
 @media (max-height: 500px) {
   .arena-setup { max-height: 98dvh; padding: 10px; }

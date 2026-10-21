@@ -26,6 +26,8 @@ A sala mantém somente um catálogo público `{ dex, shiny }` do anfitrião, sem
 
 ## Distribuição
 
+`js/systems/arena-powers.js` mantém os poderes da Arena em `save.arenaTraining`, por Pokémon, com quatro ataques equipados. A migração preserva saves anteriores e a mesclagem reúne os poderes aprendidos. Compras usam o saldo local de moedas; os convidados enviam somente os quatro identificadores equipados. O anfitrião valida a compatibilidade com o Pokémon e calcula dano e recarga pelo catálogo local. O conjunto fica fixo durante o campeonato, separado dos ataques da sobrevivência e do treino dos bots.
+
 `npm run build` gera o jogo, monta os arquivos Electron em `.runtime/desktop-package`, verifica a integridade do pacote e produz um único executável em `dist/desktop`. O túnel é incluído no pacote. O usuário final não precisa de Node.js.
 
 A pasta `.runtime` contém apenas ferramentas, caches e saídas intermediárias. A pasta `dist/desktop/PokeSurvivor-data` pode conter o progresso real do usuário e deve ser preservada.

@@ -9,15 +9,12 @@ G.ArenaUI = (() => {
   let config = { dex: 0, bot: 7, mode: 'bot', name: '' }, held = new Set(), touch = { x: 0, y: 0 }, attacks = [];
   let last = 0, sendAt = 0, lastFrame = 0, readyAt = 0, panelAt = 0, phase = '', anims = new Map(), initialized = false, busy = false;
   let stage = null, stageRound = -1, seenEvent = 0, seenSerial = -1, pickerTarget = 'dex', presentationPhase = '';
-  function movesFor(dex) {
-    const ids = [...new Set([G.Moves.startFor(G.DEX_BY[dex]), ...G.Moves.poolFor(G.DEX_BY[dex])])];
-    const moves = ids.map(id => G.Moves.BY_ID[id]).filter(m => m && m.kind !== 'buff');
-    const fallback = G.Moves.ALL.filter(m => m.kind !== 'buff' && !moves.includes(m));
-    return [...moves, ...fallback].slice(0, 4).map(m => ({ id: m.id, name: m.name, type: m.type }));
-  }
-  function spec(dex, name, human = false) {
+  const powers = G.ArenaPowers, peerPowers = new Map();
+  let shopSlot = 0, shopTarget = 'dex';
+  function movesFor(dex, ids = powers.defaults(dex)) { return powers.moves(dex, ids); }
+  function spec(dex, name, human = false, ids) {
     const mon = G.DEX_BY[dex] || G.DEX_BY[25];
-    return { dex: mon.dex, name, types: mon.types, moves: movesFor(mon.dex), human };
+    return { dex: mon.dex, name, types: mon.types, moves: movesFor(mon.dex, ids), human };
   }
   function owned() { return [...new Set([...(Object.keys(G.DB.save?.owned || {}).map(Number)), ...G.STARTERS.map(m => m.dex)])].filter(d => G.DEX_BY[d]); }
   function options(value) { return owned().map(d => `<option value="${d}" ${d === value ? 'selected' : ''}>${esc(G.DEX_BY[d].name)}</option>`).join(''); }
@@ -42,12 +39,18 @@ G.ArenaUI = (() => {
       <label>Sua dupla<select id="arena-partner"><option value="bot" ${config.mode === 'bot' ? 'selected' : ''}>Bot</option><option value="friend" ${config.mode === 'friend' ? 'selected' : ''}>Amigo por convite</option></select></label>
       <label>Pokémon do bot<select id="arena-bot">${options(config.bot)}</select></label></div>
       <div id="arena-preview" class="arena-preview"></div>
+      <details id="arena-shop" class="arena-shop"><summary>Aprender e equipar poderes · <span id="arena-shop-coins"></span> moedas</summary>
+        <label>Treinar<select id="arena-shop-target"><option value="dex">Seu Pokémon</option>${config.mode === 'bot' ? '<option value="bot">Parceiro bot</option>' : ''}</select></label>
+        <div id="arena-shop-body"></div><p id="arena-shop-message" role="status"></p></details>
       <p class="sub">Quatro ataques manuais, com recargas independentes. Mire no rival mais próximo. Mova com WASD, setas ou o controle de toque. Maçãs recuperam 25% do HP; os rivais também podem pegá-las.</p>
       <div class="row wrap"><button id="arena-start" class="btn gold">Começar com bot</button><button id="arena-create" class="btn">Criar convite</button><button id="arena-controls" class="btn">Configurar teclas</button></div>
       <div class="arena-invite"><label>Entrar com amigo: cole o convite ou código<input id="arena-invite" autocomplete="off" placeholder="Link da Arena ou código"></label><button id="arena-join" class="btn">Entrar</button></div>
       <div id="arena-room" class="arena-room"></div><p id="arena-message" role="status"></p></div>`;
     $('arena-back').onclick = close;
     $('arena-controls').onclick = () => G.SettingsUI.open('ctl');
+    if (config.mode !== 'bot') shopTarget = 'dex';
+    $('arena-shop-target').value = shopTarget;
+    $('arena-shop-target').onchange = () => { shopTarget = $('arena-shop-target').value; renderShop(); };
     for (const id of ['arena-name', 'arena-pokemon', 'arena-bot', 'arena-partner']) $(id).onchange = () => { readConfig(); preview(); };
     $('arena-start').onclick = start; $('arena-create').onclick = create; $('arena-join').onclick = join;
     $('arena-pick-player').onclick = () => { pickerTarget = 'dex'; renderPicker(); };
@@ -71,13 +74,44 @@ G.ArenaUI = (() => {
     config.mode = $('arena-partner').value; config.name = $('arena-name').value.trim();
   }
   function preview() {
-    $('arena-preview').innerHTML = movesFor(config.dex).map((m, i) => `<div>${G.Icons.html('move:' + m.id, 24)}<b>${esc(G.T(m.name))}</b><small>${esc(R.SKILLS[i].role)} · ${R.SKILLS[i].cooldown}s · ${esc(label(keys()[i]))}</small></div>`).join('');
+    $('arena-preview').innerHTML = powers.moves(config.dex).map((m, i) => { const skill = R.skillFor(m, i); return `<div>${G.Icons.html('move:' + m.id, 24)}<b>${esc(G.T(m.name))}</b><small>${esc(skill.role)} · ${skill.damage} dano · ${skill.cooldown}s · ${esc(label(keys()[i]))}</small></div>`; }).join('');
     const room = G.Social.room;
+    const friend = room?.members.find(m => m.uid !== room.host);
     $('arena-bot').disabled = config.mode !== 'bot' || room?.mode === 'arena';
     $('arena-start').textContent = room?.mode === 'arena' ? guest ? 'Aguardando anfitrião' : 'Começar com amigo' : config.mode === 'bot' ? 'Começar com bot' : 'Crie um convite para seu amigo';
-    $('arena-start').disabled = busy || (!!room && (room.mode !== 'arena' || !room.isHost || room.members.length !== 2)) || (!room && config.mode === 'friend');
+    $('arena-start').disabled = busy || (!!room && (room.mode !== 'arena' || !room.isHost || room.members.length !== 2 || !peerPowers.has(friend?.uid))) || (!room && config.mode === 'friend');
     $('arena-create').disabled = busy || (!!room && room.mode !== 'arena');
-    renderSelection(); renderPicker();
+    renderSelection(); renderPicker(); renderShop();
+  }
+  function renderShop() {
+    if (config.mode !== 'bot') shopTarget = 'dex';
+    const target = $('arena-shop-target');
+    if (config.mode === 'bot' && !target.querySelector('[value="bot"]')) target.insertAdjacentHTML('beforeend', '<option value="bot">Parceiro bot</option>');
+    if (config.mode !== 'bot') target.querySelector('[value="bot"]')?.remove();
+    target.value = shopTarget;
+    const dex = config[shopTarget], p = powers.profile(dex);
+    $('arena-shop-coins').textContent = G.DB.save.coins;
+    $('arena-shop-body').innerHTML = `<h3>${esc(G.DEX_BY[dex].name)}</h3><p>Novos poderes custam ${powers.COST} moedas cada e ficam salvos para este Pokémon na Arena. Equipar ou trocar poderes aprendidos é grátis.</p>
+      <div class="arena-power-slots">${p.loadout.map((id, i) => `<button class="btn small ${i === shopSlot ? 'gold' : ''}" data-power-slot="${i}" aria-pressed="${i === shopSlot}">${esc(label(keys()[i]))} · ${esc(G.T(G.Moves.BY_ID[id].name))}</button>`).join('')}</div>
+      <p>Escolha o poder para ${esc(label(keys()[shopSlot]))}. Um poder já equipado troca de posição.</p>
+      <div class="arena-power-grid">${powers.pool(dex).map(id => {
+        const m = G.Moves.BY_ID[id], learned = p.learned.includes(id), selected = p.loadout[shopSlot] === id;
+        const skill = R.skillFor(powers.moves(dex, [id])[0], shopSlot);
+        return `<button class="btn ghost arena-power-card" data-power="${id}" ${selected || (!learned && G.DB.save.coins < powers.COST) ? 'disabled' : ''}>
+          <span>${G.Icons.html('move:' + id, 24)} ${esc(G.T(m.name))}</span><small>${esc(G.T(G.U.TYPE_NAME[m.type]))} · ${skill.damage} dano · ${skill.cooldown}s</small>
+          <b>${selected ? 'Equipado' : learned ? 'Equipar grátis' : 'Comprar e equipar · ' + powers.COST + ' moedas'}</b></button>`;
+      }).join('')}</div>`;
+    $('arena-shop-body').querySelectorAll('[data-power-slot]').forEach(b => b.onclick = () => { shopSlot = +b.dataset.powerSlot; renderShop(); });
+    $('arena-shop-body').querySelectorAll('[data-power]').forEach(b => b.onclick = () => {
+      const result = powers.equip(dex, shopSlot, b.dataset.power);
+      if (!result.ok) { $('arena-shop-message').textContent = result.error; G.Audio.sfx('error'); return; }
+      G.Audio.sfx(result.cost ? 'buy' : 'confirm'); G.UI.refreshCoins(); preview();
+      $('arena-shop-message').textContent = result.cost ? 'Poder aprendido e equipado! Compra salva para este Pokémon.' : 'Poder equipado sem gastar moedas.';
+      if (guest) sendPowers();
+    });
+  }
+  function sendPowers() {
+    if (guest && G.Social.room?.mode === 'arena') G.Net.toHost({ k: 'arena-ready', room: roomId, moves: powers.profile(config.dex).loadout });
   }
   function portrait(dex, title, name) {
     const card = document.createElement('article'); card.className = 'arena-mon-card';
@@ -165,13 +199,13 @@ G.ArenaUI = (() => {
   }
   async function start() {
     if (busy) return; readConfig(); const room = G.Social.room;
-    if (room && (room.mode !== 'arena' || !room.isHost || room.members.length !== 2)) return;
+    if (room && (room.mode !== 'arena' || !room.isHost || room.members.length !== 2 || !peerPowers.has(room.members.find(m => m.uid !== room.host)?.uid))) return;
     if (!room && config.mode !== 'bot') return;
     busy = true;
     try {
       if (room) { const result = await G.Social.startRun(Math.floor(Math.random() * 1000000)); if (!result.ok) throw Error(result.error); }
       guest = false; roomId = room?.id || null; humanId = '0:0';
-      const friends = room ? room.members.map(m => spec(m.dex, m.name, true)) : [spec(config.dex, config.name || 'Você', true), spec(config.bot, 'Parceiro bot')];
+      const friends = room ? room.members.map(m => spec(m.dex, m.name, true, m.uid === room.host ? powers.profile(m.dex).loadout : peerPowers.get(m.uid))) : [spec(config.dex, config.name || 'Você', true, powers.profile(config.dex).loadout), spec(config.bot, 'Parceiro bot', false, powers.profile(config.bot).loadout)];
       const pool = G.DEX.filter(m => G.SPRITE_META[m.dex]);
       const teams = [{ name: 'Sua dupla', fighters: friends }];
       for (let i = 1; i < 8; i++) teams.push({ name: 'Dupla ' + i, fighters: [0, 1].map(() => { const m = G.U.pick(pool); return spec(m.dex, m.name); }) });
@@ -336,7 +370,7 @@ G.ArenaUI = (() => {
       if (!guest) { if (roomId || !blocked) engine.step(dt); if (now - readyAt > 85) { sendFrame(); readyAt = now; } }
       present(!roomId && blocked ? 0 : dt);
       if (now - panelAt > 80 || phase !== state.phase + state.round) { renderPanel(); panelAt = now; } draw(dt);
-    } else if (guest && now - readyAt > 1000 && G.Social.room?.run) { G.Net.toHost({ k: 'arena-ready', room: roomId }); readyAt = now; }
+    } else if (guest && now - readyAt > 500) { sendPowers(); readyAt = now; }
     requestAnimationFrame(loop);
   }
   async function close() {
@@ -344,7 +378,7 @@ G.ArenaUI = (() => {
     visible = false; engine = null; state = null; held.clear(); touch = { x: 0, y: 0 }; attacks = []; anims.clear(); G.FX.clear(); stage = null;
     $('scr-arena').classList.add('hidden');
     if (G.Social.room?.mode === 'arena') await G.Social.leaveRoom();
-    roomId = null; if (hasInvite()) history.replaceState(null, '', location.pathname + location.search);
+    roomId = null; peerPowers.clear(); if (hasInvite()) history.replaceState(null, '', location.pathname + location.search);
     G.Flow.goMenu();
   }
   function init() {
@@ -375,9 +409,19 @@ G.ArenaUI = (() => {
     G.Net.on((from, msg) => {
       const room = G.Social.room;
       if (!visible || !room || room.mode !== 'arena' || msg?.room !== room.id) return;
-      if (room.isHost && engine && room.members.some(m => m.uid === from && m.uid !== room.host)) {
-        if (msg.k === 'arena-input') engine.input('0:1', msg);
-        if (msg.k === 'arena-ready') sendFrame(from);
+      if (room.isHost && room.members.some(m => m.uid === from && m.uid !== room.host)) {
+        if (msg.k === 'arena-input' && engine) engine.input('0:1', msg);
+        if (msg.k === 'arena-ready') {
+          if (!engine && Array.isArray(msg.moves)) {
+            const member = room.members.find(m => m.uid === from);
+            const next = powers.normalize(member.dex, msg.moves);
+            if (JSON.stringify(next) !== JSON.stringify(peerPowers.get(from))) {
+              peerPowers.set(from, next);
+              if ($('arena-start')) preview();
+            }
+          }
+          if (engine) sendFrame(from);
+        }
       } else if (!room.isHost && from === room.host && msg.k === 'arena-frame' && room.run && msg.state?.teams?.length === 8) {
         state = msg.state; humanId = '0:1'; guest = true; roomId = room.id;
         if (!$('arena-canvas')) scene(); lastFrame = performance.now();
