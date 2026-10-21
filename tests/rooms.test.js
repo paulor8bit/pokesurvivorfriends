@@ -27,6 +27,21 @@ async function setup(t) {
     return { ws, uid: hello.uid, next, rpc(k, data = {}) { const n = ++id; ws.send(JSON.stringify({ k, id: n, ...data })); return next(m => m.k === 'result' && m.id === n); } };
   } };
 }
+
+test('Arena rooms allow one invited partner, lock entry during the tournament and retain host authorization', async t => {
+  const s = await setup(t), host = await s.client(), friend = await s.client(), extra = await s.client();
+  const created = await host.rpc('create', { member: mon('Host'), mode: 'arena' });
+  assert.equal(created.room.mode, 'arena');
+  const joined = await friend.rpc('join', { code: created.room.id, member: mon('Amigo') }); assert.equal(joined.ok, true);
+  assert.equal((await extra.rpc('join', { code: created.room.id, member: mon('Extra') })).ok, false);
+  assert.equal((await friend.rpc('start', { seed: 1 })).ok, false);
+  assert.equal((await host.rpc('start', { seed: 1 })).ok, true);
+  assert.equal((await host.rpc('open', { open: true })).ok, false);
+  await friend.rpc('leave');
+  assert.equal((await extra.rpc('join', { code: created.room.id, member: mon('Extra') })).ok, false);
+  assert.equal((await host.rpc('finish')).ok, true);
+  assert.equal((await extra.rpc('join', { code: created.room.id, member: mon('Extra') })).ok, true);
+});
 const mon = name => ({ name, dex: 25, shiny: false });
 
 test('serves game files, keeps checkout and scripts private, no stale tunnel metadata', async t => {

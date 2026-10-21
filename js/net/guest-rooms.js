@@ -109,7 +109,7 @@
   G.DB.onLeave(stop);
   G.Social = {
     guestRooms: true, MAX_PLAYERS: 4,
-    setName, createRoom() { choice = null; setServer(location.origin); return enter('create'); },
+    setName, createRoom(options = {}) { setServer(location.origin); choice = options.choice || null; return enter('create', { mode: options.mode === 'arena' ? 'arena' : 'survival' }); },
     joinRoom: code => enter('join', { code }), leaveRoom, stop, setServer, choosePokemon,
     roomCatalog: code => request('catalog', { code }), catalog,
     get serverBase() { return serverBase; }, get choice() { return choice; },

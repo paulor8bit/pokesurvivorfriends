@@ -110,7 +110,7 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
             let id; do { id = randomBytes(6).toString('hex').toUpperCase(); } while (rooms.has(id));
             info.slot = 0;
             const catalog = catalogOf(m.catalog);
-            const next = { id, host: client.uid, open: true, catalog, slots: slotsOf(m.slots, catalog), run: null, members: new Map([[client.uid, info]]) };
+            const next = { id, host: client.uid, mode: m.mode === 'arena' ? 'arena' : 'survival', open: true, catalog, slots: slotsOf(m.slots, catalog), run: null, members: new Map([[client.uid, info]]) };
             client.room = id; rooms.set(id, next); reply({ ok: true, room: view(next) }); break;
           }
           case 'join': {
@@ -118,7 +118,8 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
             if (room) throw new Error('Sal de tu sala antes de entrar en otra.');
             if (!next) throw new Error('Esa sala ya no existe. Pide un nuevo enlace.');
             if (!next.open) throw new Error('La partida de esa sala ya ha empezado.');
-            if (next.members.size >= 4) throw new Error('La sala está llena (máximo 4).');
+            if (next.members.size >= (next.mode === 'arena' ? 2 : 4)) throw new Error('La sala está llena.');
+            if (next.mode === 'arena' && next.run) throw new Error('O campeonato já começou. Aguarde o próximo.');
             const info = member(client, m.member, next);
             info.slot = freeSlot(next);
             client.room = next.id; next.members.set(client.uid, info);
@@ -148,7 +149,7 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
             if (room.run) throw new Error('La partida ya está en marcha.');
             const seed = Number(m.seed);
             if (!Number.isInteger(seed) || seed < 0 || seed > 0x7fffffff) throw new Error('Mensaje inválido.');
-            room.run = { id: randomBytes(8).toString('hex'), seed }; room.open = true;
+            room.run = { id: randomBytes(8).toString('hex'), seed }; room.open = room.mode !== 'arena';
             broadcast(room); reply({ ok: true, room: view(room) }); break;
           }
           case 'finish': {
@@ -157,6 +158,7 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
           }
           case 'open': {
             if (!room || room.host !== client.uid) throw new Error('Sólo el anfitrión puede empezar.');
+            if (room.mode === 'arena' && room.run) throw new Error('O campeonato já começou.');
             room.open = m.open === true; broadcast(room); reply({ ok: true }); break;
           }
           case 'peer': {

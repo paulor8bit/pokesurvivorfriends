@@ -4,6 +4,12 @@
  * são os oficiais em português.
  */
 G.I18n.add({
+  'Equilibrio de la Arena': 'Equilíbrio da Arena',
+  'Arena: los rivales ya no encadenan los cuatro ataques al instante ni se concentran siempre en el jugador. Tienen tiempo de reacción, menos daño y disparos más lentos, con dificultad progresiva hasta la final. Hay una breve protección entre golpes y las manzanas aparecen antes y con más frecuencia.': 'Arena: os rivais não disparam mais os quatro ataques de uma vez nem focam sempre no jogador. Agora têm tempo de reação, dano menor e disparos mais lentos, com dificuldade crescente até a final. Há uma breve proteção entre golpes, e as maçãs aparecem mais cedo e com maior frequência.',
+  'Selección de la Arena': 'Seleção da Arena',
+  'Arena: selección de personajes al estilo de los juegos de lucha, con cuadrícula de Pokémon y retratos grandes de la pareja. El combate utiliza los terrenos, efectos de ataques, partículas, iconos, música y sonidos del juego.': 'Arena: seleção de personagens no estilo dos jogos de luta, com grade de Pokémon e retratos grandes da dupla. O combate usa os terrenos, efeitos dos ataques, partículas, ícones, músicas e sons do jogo.',
+  'Campeonato de duplas · amigo ou bot': 'Campeonato de duplas · amigo ou bot',
+  'Arena: campeonato de ocho parejas, con cuartos, semifinal y final. Juega con un amigo por invitación o un bot contra parejas de bots. Cuatro ataques manuales con recarga, botones abajo a la derecha y teclas Num 1–4 configurables en Ajustes. Las manzanas recuperan un 25% de HP. Si tu amigo sale, un bot toma su lugar.': 'Arena: campeonato com oito duplas, quartas, semifinal e final. Jogue com um amigo por convite ou um bot contra duplas de bots. Quatro ataques manuais com recarga, botões no canto inferior direito e teclas Num 1–4 configuráveis nos Ajustes. Maçãs recuperam 25% do HP. Se o amigo sair, um bot assume a vaga.',
   'Vida sobre los Pokémon': 'Vida acima dos Pokémon',
   'En las partidas con amigos, el nombre y el HP actual y máximo aparecen sobre cada Pokémon, también sobre el tuyo. La barra cambia de color cuando queda poca vida y sigue visible sobre el escenario.': 'Nas partidas com amigos, o nome e o HP atual e máximo aparecem acima de cada Pokémon, inclusive o seu. A barra muda de cor quando a vida fica baixa e aparece sobre o cenário.',
   'Elige tu Pokémon para esta sala': 'Escolha seu Pokémon para esta sala', 'Colección del anfitrión': 'Coleção do anfitrião',

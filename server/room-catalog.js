@@ -42,6 +42,6 @@ function roomView(room) {
   const members = [...room.members.values()].sort((a, b) => a.slot - b.slot);
   const occupied = new Set(members.map(m => m.slot));
   const bots = room.slots.flatMap((s, i) => s.kind === 'bot' && !occupied.has(i + 1) ? [{ ...s, slot: i + 1 }] : []);
-  return { id: room.id, host: room.host, open: room.open, catalog: room.catalog, members, slots: room.slots, bots, run: room.run };
+  return { id: room.id, host: room.host, mode: room.mode || 'survival', open: room.open, catalog: room.catalog, members, slots: room.slots, bots, run: room.run };
 }
 module.exports = { catalogOf, choiceOf, originAllowed, slotsOf, freeSlot, roomView };

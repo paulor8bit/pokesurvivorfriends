@@ -638,7 +638,9 @@ G.Game = (() => {
     // La red se atiende siempre (también con las cartas de nivel abiertas).
     if (G.Coop.active && pl && state !== 'ui' && state !== 'over') G.Coop.tick(dt);
 
-    if (pl && state !== 'ui') render(); else Backdrop.render(ctx, w, h, dpr, dt);
+    if (!G.ArenaUI.active) {
+      if (pl && state !== 'ui') render(); else Backdrop.render(ctx, w, h, dpr, dt);
+    }
     G.UI.tick(dt);
 
     G.Input.endFrame();
@@ -986,6 +988,7 @@ G.Flow = {
   },
   afterLoad() {
     G.Audio.music('village');
+    if (G.ArenaUI.hasInvite()) { G.ArenaUI.open(); return; }
     if (!G.DB.save.partner && G.SocialUI.hasInvite()) G.FriendsUI.open();
     else if (!G.DB.save.partner) G.StartersUI.start();
     else this.goMenu();

@@ -1,6 +1,6 @@
 {
   "name": "pokesurvivor",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "PokeSuvivor Friends - Fan game de sobrevivência Pokémon",
   "author": "Paulinho Ricardo - gatinho.punkeca",
   "repository": {
@@ -21,8 +21,9 @@
     "test:bots": "node tests/bots-browser.cjs",
     "test:guests": "node tests/guest-collection-browser.cjs",
     "test:play": "node tests/unified-play-browser.cjs",
+    "test:arena": "node tests/arena-browser.cjs",
     "test:android": "node --test tests/android-rooms.cjs",
-    "test": "node --test tests/rooms.test.js tests/online-session.test.js tests/storage.test.js tests/bots.test.js",
+    "test": "node --test tests/rooms.test.js tests/online-session.test.js tests/storage.test.js tests/bots.test.js tests/arena.test.js",
     "build:android": "npm run build:game && node tools/prepare-android.js && powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-android.ps1"
   },
   "build": {

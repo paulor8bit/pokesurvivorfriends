@@ -8,7 +8,7 @@ O foco deste projeto é um aplicativo Windows para jogar solo ou criar salas tem
 
 ## Baixar e instalar
 
-- **[Baixar para Windows x64](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Online-1.1.0-x64.exe)** — aplicativo portátil; baixe e abra o executável. Mantenha a pasta de dados criada ao lado dele para preservar o progresso.
+- **[Baixar para Windows x64](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Online-1.2.0-x64.exe)** — aplicativo portátil; baixe e abra o executável. Mantenha a pasta de dados criada ao lado dele para preservar o progresso.
 - **[Baixar APK Android](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Android.apk)** — versão de teste para Android 8 ou superior, ARM64. Instale o APK no celular; veja [as instruções e limitações](docs/ANDROID.md).
 - [Todas as versões e arquivos de verificação](https://github.com/paulor8bit/pokesurvivorfriends/releases).
 
@@ -25,7 +25,40 @@ Instruções completas: [Jogar online](docs/JOGAR-ONLINE.md).
 
 Convidados podem escolher iniciais ou Pokémon emprestados da coleção do anfitrião. Quem já joga no próprio aplicativo pode colar o link completo em **Jogar → Entrar por convite** e selecionar **Minha coleção**, usando suas melhorias e seu ataque inicial salvos. Os empréstimos não desbloqueiam Pokémon no salvamento do convidado.
 
-## Android
+## Arena 2 × 2
+
+No menu, abra **Arena 2 × 2** para um campeonato com oito duplas: quartas,
+semifinal e final. Escolha seu Pokémon e forme dupla com um bot ou crie um
+convite para um amigo. As duplas adversárias são bots; as outras chaves são
+simuladas. Um amigo que desconecta é substituído por um bot.
+
+A seleção usa uma grade de personagens no estilo dos jogos de luta, com
+retratos grandes dos dois integrantes da dupla. Escolha **P1** ou **P2** e
+clique em um Pokémon; também pode navegar com as setas e confirmar com Enter.
+O combate reutiliza os terrenos, sprites, efeitos dos golpes, partículas,
+ícones, música e sons do próprio jogo.
+
+Mova com WASD, setas ou o controle de toque à esquerda. Os quatro ataques são
+manuais: clique/toque nos botões no canto inferior direito ou use **Num 1–4**.
+Em **Configurações → Controles → Arena**, clique na tecla para alterá-la; as
+preferências ficam neste dispositivo. Cada ataque tem sua própria recarga.
+Os ataques miram o rival mais próximo: disparo, rajada, investida e explosão.
+
+Maçãs aparecem durante a luta e recuperam **25% do HP** de quem as pega,
+incluindo os rivais. Uma dupla perde quando os dois Pokémon caem. Cada rodada
+começa com HP completo. Após 90 segundos começa a prorrogação com perda de HP;
+um empate permite repetir a batalha. A Arena não gasta moedas nem modifica
+a coleção ou o progresso do modo sobrevivência. O anfitrião deve manter o
+aplicativo aberto; ao sair, a sala é encerrada.
+
+Os rivais têm tempo de reação e usam um ataque por vez, dividindo os alvos
+entre os integrantes da sua dupla. As quartas são mais acessíveis; o dano,
+ritmo e velocidade dos disparos aumentam na semifinal e na final. Há uma
+breve proteção de 0,22 s entre golpes para evitar dano concentrado instantâneo.
+As vantagens e resistências de tipo são moderadas nas primeiras rodadas.
+A primeira maçã cai após 5 segundos; as seguintes aparecem a cada 6–9 segundos.
+
+## Aplicativo Android
 
 O APK em `dist/android/PokeSurvivor-Android.apk` permite jogar solo sem internet
 e hospedar salas no próprio celular, com convites pela internet ou pelo Wi-Fi.
@@ -52,6 +85,7 @@ npm run build
 | `npm run build` | Gerar o jogo e o executável Windows em `dist/desktop` |
 | `npm test` | Verificar salvamento, salas e ciclo de vida do acesso online |
 | `npm run test:browser` | Validar convite e partida real em dois navegadores Edge sem interface |
+| `npm run test:arena` | Validar ataques manuais, chaves, cura, atalhos, celular e dupla por convite |
 
 Edite `dev.html` e os módulos de `js/`. Os arquivos gerados são reconstruídos pelo processo de build. Não é necessário manter as páginas, domínio, Firebase ou sistema de doações do projeto original.
 

@@ -7,7 +7,7 @@
  */
 G.UI = (() => {
   const $ = id => document.getElementById(id);
-  const SCREENS = ['scr-starters', 'scr-menu',
+  const SCREENS = ['scr-arena', 'scr-starters', 'scr-menu',
                    'scr-dex', 'scr-upgrades', 'scr-gacha', 'scr-levelup', 'scr-pause', 'scr-over',
                    'scr-friends', 'scr-lobby', 'scr-item', 'scr-goals', 'scr-bond', 'scr-bots'];
 

@@ -61,6 +61,19 @@ function player(options = {}) {
 }
 const member = { name: 'Amigo', dex: 25, shiny: false };
 
+test('Android Arena has only two human slots and cannot reopen a running tournament', async t => {
+  const host = player(), friend = player(), extra = player();
+  t.after(() => { host.ws.terminate(); friend.ws.terminate(); extra.ws.terminate(); });
+  for (const p of [host, friend, extra]) await p.next(m => m.k === 'hello');
+  const { room } = await host.rpc('create', { member, mode: 'arena' }); assert.equal(room.mode, 'arena');
+  assert.equal((await friend.rpc('join', { code: room.id, member })).ok, true);
+  assert.equal((await extra.rpc('join', { code: room.id, member })).ok, false);
+  assert.equal((await friend.rpc('start', { seed: 1 })).ok, false);
+  assert.equal((await host.rpc('start', { seed: 1 })).ok, true);
+  assert.equal((await host.rpc('open', { open: true })).ok, false);
+  await friend.rpc('leave'); assert.equal((await extra.rpc('join', { code: room.id, member })).ok, false);
+});
+
 test('Android accepts an installed client from localhost and shares only available borrowed choices', async t => {
   const host = player(), app = player({ origin: 'http://localhost:8790' });
   t.after(() => { host.ws.terminate(); app.ws.terminate(); });

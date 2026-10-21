@@ -183,7 +183,7 @@
       if (!r.ok) { notice(r.error, true); return; }
       pendingCode = '';
       if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-      G.LobbyUI.open();
+      if (G.Social.room?.mode === 'arena') G.ArenaUI.open(); else G.LobbyUI.open();
     } catch (e) { notice(e.message, true); }
     finally { busy = false; $('room-pokemon-ok').disabled = false; }
   }

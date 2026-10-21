@@ -6,6 +6,18 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-21', title: ['Equilibrio de la Arena', 'Arena balance'], fix: [
+    ['Arena: los rivales ya no encadenan los cuatro ataques al instante ni se concentran siempre en el jugador. Tienen tiempo de reacción, menos daño y disparos más lentos, con dificultad progresiva hasta la final. Hay una breve protección entre golpes y las manzanas aparecen antes y con más frecuencia.',
+     'Arena: rivals no longer chain all four attacks instantly or always focus the player. They have reaction time, lower damage and slower shots, with difficulty increasing toward the final. Brief protection separates hits, and apples appear earlier and more often.']
+  ] },
+  { d: '2026-10-21', title: ['Selección de la Arena', 'Arena character select'], chg: [
+    ['Arena: selección de personajes al estilo de los juegos de lucha, con cuadrícula de Pokémon y retratos grandes de la pareja. El combate utiliza los terrenos, efectos de ataques, partículas, iconos, música y sonidos del juego.',
+     'Arena: a fighting-game character selection grid with large partner portraits. Battles use the game’s terrain, attack effects, particles, icons, music and sounds.']
+  ] },
+  { d: '2026-10-21', title: ['Arena 2 × 2', 'Arena 2 × 2'], new: [
+    ['Arena: campeonato de ocho parejas, con cuartos, semifinal y final. Juega con un amigo por invitación o un bot contra parejas de bots. Cuatro ataques manuales con recarga, botones abajo a la derecha y teclas Num 1–4 configurables en Ajustes. Las manzanas recuperan un 25% de HP. Si tu amigo sale, un bot toma su lugar.',
+     'Arena: an eight-team doubles tournament with quarterfinals, semifinals and a final. Team up with an invited friend or a bot against bot teams. Four manual attacks with cooldowns, buttons at the bottom right and rebindable Num 1–4 keys in Settings. Apples restore 25% HP. A bot takes over if your friend leaves.']
+  ] },
   { d: '2026-10-20', title: ['Todo en Jugar', 'One Play button'], chg: [
     ['Jugar reúne las partidas a solas y con amigos. Elige bot o amigo invitado para cada uno de los tres huecos. Puedes empezar sin esperar: los invitados entran incluso durante la partida y ocupan huecos libres o sustituyen bots. La sala sólo está llena con cuatro jugadores humanos. Si alguien sale, vuelve el bot de su hueco con el nivel que ya tenía.',
      'Play brings solo and co-op together. Choose a bot or invited friend for each of the three slots. Start without waiting: friends can join during the game, taking empty slots or replacing bots. The room is full only with four human players. When someone leaves, that slot’s bot returns at its previous run level.']
