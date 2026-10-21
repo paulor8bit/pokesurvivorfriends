@@ -10,10 +10,13 @@ toque e funciona solo sem internet. O progresso fica nos dados privados do app;
 atualizar mantendo o mesmo identificador e assinatura preserva os saves.
 Desinstalar ou limpar os dados apaga o progresso. O APK não importa os saves do PC.
 
+## Entrar como convidado usando seu progresso
+
+Abra o seu aplicativo atualizado, entre em **Jogar**, cole o **link completo** do anfitrião e toque em **Entrar por convite**. Escolha **Minha coleção** para usar seus Pokémon e melhorias locais, ou **Coleção do anfitrião** para escolher iniciais e Pokémon emprestados com atributos base. O empréstimo vale somente para a sala. Abrir o convite em um navegador separado usa os dados daquele navegador, não os dados privados do APK.
+
 ## Ser anfitrião
 
-Em **Jogar com amigos**, informe o apelido e crie uma sala. Há até quatro vagas,
-incluindo o anfitrião. O servidor roda no celular, sem depender de um PC.
+Em **Jogar**, a sala abre automaticamente. Escolha **Bot** ou **Amigo convidado** para cada uma das três vagas e comece quando quiser. Amigos podem entrar durante a partida e substituir bots; a sala só fica cheia com quatro jogadores humanos. O servidor roda no celular, sem depender de um PC. Durante a partida, **Equipe e convite** no menu de pausa mostra as vagas e o link.
 
 - **Internet:** aguarde a mensagem de convite pronto e use Compartilhar convite.
   Um túnel Cloudflare temporário fornece HTTPS sem conta ou domínio próprio.
@@ -23,6 +26,8 @@ incluindo o anfitrião. O servidor roda no celular, sem depender de um PC.
   convidados ou com isolamento podem impedir a conexão.
 
 Mantenha o aplicativo aberto e visível no celular anfitrião durante a partida.
+Compartilhar o convite não suspende as mensagens da sala. As conexões da sala
+usam verificação própria de presença, sem o limite curto das requisições HTTP.
 Ao sair para outro aplicativo, o Android pode suspender o jogo e desconectar
 participantes. O botão Voltar oferece fechar e encerra sala, servidor e túnel.
 Fechar ou forçar a parada também encerra a hospedagem. Não há serviço de início
@@ -46,6 +51,12 @@ O comando gera o jogo, copia somente recursos públicos, prepara o cloudflared
 2026.10.2 verificando SHA-256, executa os testes Java e compila o APK. O processo
 não executa o empacotamento Electron e não modifica os dados Windows.
 Os fontes ficam em `android/app/src/main/java`, além de `dev.html` e `js/`.
+
+`npm run test:android` executa o servidor Java real no computador e verifica
+a permanência da sala com uma resposta de presença atrasada enquanto o amigo
+abre o convite, a entrada de convidados, o encerramento pelo anfitrião e a
+remoção de conexões que deixaram de responder. Requer as dependências já baixadas
+pela compilação Android; os testes usam a porta local 8787 temporariamente.
 
 O NanoWSD vendorizado mantém sua licença BSD e limita mensagens a 256 KiB,
 inclusive mensagens fragmentadas. O servidor usa a mesma validação de membros,

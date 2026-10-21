@@ -38,14 +38,14 @@ internal static class Bootstrap
             else throw new Exception("Mova o aplicativo para uma pasta em que você possa salvar arquivos.");
             LogPath = Path.Combine(DataRoot, "startup.log");
         } catch (Exception error) {
-            MessageBox.Show(error.Message, "PokéSurvivor", MessageBoxButtons.OK, MessageBoxIcon.Error); return;
+            MessageBox.Show(error.Message, "PokeSuvivor Friends", MessageBoxButtons.OK, MessageBoxIcon.Error); return;
         }
-        splash = new Form { Text = "PokéSurvivor", ClientSize = new Size(440, 160), StartPosition = FormStartPosition.CenterScreen,
+        splash = new Form { Text = "PokeSuvivor Friends", ClientSize = new Size(440, 160), StartPosition = FormStartPosition.CenterScreen,
             FormBorderStyle = FormBorderStyle.FixedDialog, MaximizeBox = false, MinimizeBox = false,
             BackColor = Color.FromArgb(16, 30, 54), ForeColor = Color.White };
         try { splash.Icon = Icon.ExtractAssociatedIcon(Assembly.GetExecutingAssembly().Location); } catch { }
-        splash.Controls.Add(new Label { Text = "Abrindo o PokéSurvivor…", Location = new Point(24, 22), AutoSize = true,
-            Font = new Font("Segoe UI", 17, FontStyle.Bold) });
+        splash.Controls.Add(new Label { Text = "Abrindo PokeSuvivor Friends…", Location = new Point(24, 22), AutoSize = true,
+            Font = new Font("Segoe UI", 15, FontStyle.Bold) });
         status = new Label { Text = "Preparando o aplicativo…", Location = new Point(26, 66), Size = new Size(390, 42), Font = new Font("Segoe UI", 10) };
         splash.Controls.Add(status);
         splash.Controls.Add(new ProgressBar { Location = new Point(26, 120), Size = new Size(386, 8), Style = ProgressBarStyle.Marquee });
@@ -59,7 +59,7 @@ internal static class Bootstrap
             catch (Exception error) {
                 Log(error.ToString());
                 if (!cancel) MessageBox.Show(splash, "Não foi possível abrir o jogo.\n\n" + error.Message + "\n\nDiagnóstico: " + LogPath,
-                    "PokéSurvivor", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    "PokeSuvivor Friends", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
             finally { if (!splash.IsDisposed) splash.Close(); }
         };

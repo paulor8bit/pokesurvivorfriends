@@ -4,6 +4,30 @@
  * são os oficiais em português.
  */
 G.I18n.add({
+  'Vida sobre los Pokémon': 'Vida acima dos Pokémon',
+  'En las partidas con amigos, el nombre y el HP actual y máximo aparecen sobre cada Pokémon, también sobre el tuyo. La barra cambia de color cuando queda poca vida y sigue visible sobre el escenario.': 'Nas partidas com amigos, o nome e o HP atual e máximo aparecem acima de cada Pokémon, inclusive o seu. A barra muda de cor quando a vida fica baixa e aparece sobre o cenário.',
+  'Elige tu Pokémon para esta sala': 'Escolha seu Pokémon para esta sala', 'Colección del anfitrión': 'Coleção do anfitrião',
+  'Mi colección': 'Minha coleção', 'Elegir y entrar': 'Escolher e entrar', 'Colección propia': 'Coleção própria', 'Prestado': 'Emprestado',
+  'Iniciales y Pokémon del anfitrión. Los prestados usan atributos base y no se añaden a tu colección.': 'Iniciais e Pokémon do anfitrião. Os emprestados usam atributos base e não são adicionados à sua coleção.',
+  'Tus Pokémon usan las mejoras, la variante shiny y el ataque inicial guardados en este dispositivo. Los iniciales nuevos usan atributos base.': 'Seus Pokémon usam as melhorias, a variante shiny e o ataque inicial salvos neste aparelho. Iniciais novos usam atributos base.',
+  '¿Juegas en tu aplicación instalada? Pega el enlace completo aquí para usar tu colección y tus mejoras.': 'Está no seu jogo instalado? Cole o link completo aqui para usar sua coleção e suas melhorias.',
+  'Ese Pokémon no está disponible en esta sala.': 'Esse Pokémon não está disponível nesta sala.',
+  'Ese Pokémon no está en tu colección.': 'Esse Pokémon não está na sua coleção.',
+  'Sal de tu sala antes de entrar en otra.': 'Saia da sua sala antes de entrar em outra.', 'Enlace de sala inválido.': 'Link de sala inválido.',
+  'Pokémon de invitados': 'Pokémon dos convidados',
+  'Los invitados eligen entre los iniciales, los Pokémon prestados por el anfitrión o su propia colección. Pega el enlace completo en tu aplicación para conservar tus mejoras y tu ataque inicial, sin cambiar tu guardado ni desbloquear los Pokémon prestados.': 'Convidados podem escolher iniciais, Pokémon emprestados pelo anfitrião ou sua própria coleção. Cole o link completo no seu aplicativo para usar suas melhorias e seu ataque inicial, sem alterar o salvamento nem desbloquear os Pokémon emprestados.',
+  'Los compañeros exploran cerca del jugador, se separan y rodean obstáculos. Conservan su afinidad entre partidas, pero empiezan cada partida en nivel 1 y aprenden hasta cuatro ataques en los niveles 1, 10, 20 y 30. En Equipo puedes entrenar ataques alternativos con monedas.': 'Os parceiros exploram perto do jogador, mantêm distância entre si e contornam obstáculos. A afinidade continua entre partidas, mas cada partida começa no nível 1, com até quatro ataques liberados nos níveis 1, 10, 20 e 30. Treine golpes alternativos com moedas na Equipe.',
+  'Afinidad': 'Afinidade', 'Nuevo ataque': 'Novo ataque',
+  'en la partida': 'na partida', 'Entrena la afinidad para configurar': 'Treine a afinidade para configurar',
+  'Aprendido · cambiar': 'Aprendido · trocar', 'Aprende al subir de nivel': 'Aprende ao subir de nível',
+  'Entrenar ataques': 'Treinar ataques', 'Los ataques aprendidos se equipan gratis. Cada ataque nuevo cuesta': 'Equipar golpes aprendidos é grátis. Cada golpe novo custa',
+  'Equipar gratis': 'Equipar grátis', 'Comprar y equipar': 'Comprar e equipar', 'Ya equipado': 'Já equipado',
+  'Necesitas más afinidad.': 'Você precisa de mais afinidade.', 'Movimiento no disponible.': 'Golpe indisponível.',
+  'Ese ataque ya está equipado.': 'Esse golpe já está equipado.',
+  'La afinidad conserva la experiencia de todas las partidas. En cada partida empiezan en nivel 1 y activan sus ataques en los niveles 1, 10, 20 y 30.': 'A afinidade mantém a experiência de todas as partidas. Em cada partida, os parceiros começam no nível 1 e ativam os ataques nos níveis 1, 10, 20 e 30.',
+  'PokeSuvivor Friends se juega en horizontal.': 'PokeSuvivor Friends é jogado na horizontal.',
+  'PokeSuvivor Friends necesita JavaScript para funcionar. Actívalo para jugar.': 'PokeSuvivor Friends precisa de JavaScript para funcionar. Ative-o para jogar.',
+  'El juego ahora se llama PokeSuvivor Friends. Al entrar por primera vez eliges directamente tu Pokémon inicial, sin cuestionario. Tu progreso guardado continúa igual.': 'O jogo agora se chama PokeSuvivor Friends. Na primeira entrada, você escolhe seu Pokémon inicial diretamente, sem questionário. Seu progresso salvo continua igual.',
   // ---------------- tipos e regiões ----------------
   'PokéSurvivor – Juego Pokémon gratis online estilo Survivor.io': 'PokéSurvivor – Jogo Pokémon grátis online estilo Survivor.io',
   'PokéSurvivor – Juego Pokémon grátis online estilo Survivor.io': 'PokéSurvivor – Jogo Pokémon grátis online estilo Survivor.io',
@@ -696,6 +720,10 @@ G.I18n.add({
   'Inicia sesión primero.': 'Entre primeiro.',
 
   'Aplicación Android: juega sin conexión con controles táctiles y guardado local. El teléfono también puede alojar salas de hasta cuatro jugadores y compartir invitaciones por internet o por la misma red Wi-Fi. Mantén el juego abierto: al cerrarlo, termina la sala.': 'Aplicativo Android: jogue sem internet com controles por toque e progresso local. O celular também pode hospedar salas para até quatro jogadores e compartilhar convites pela internet ou pelo mesmo Wi-Fi. Mantenha o jogo aberto: ao fechar, a sala termina.',
+  'Android: las salas ya no se cierran por un pequeño retraso de conexión al esperar amigos. Compartir el enlace tampoco suspende los mensajes de la sala.': 'Android: corrigido o fechamento das salas por pequenos atrasos de conexão ao aguardar amigos. Compartilhar o convite também não suspende mais as mensagens da sala.',
+  'Android: corregida la conexión del invitado mediante el enlace público. El servidor ya no envía una cabecera HTTP que cerraba la conexión de la sala en el túnel. Los errores de conexión ya no piden abrir un iniciador de Windows.': 'Android: corrigida a conexão dos convidados pelo link público. O servidor não envia mais um cabeçalho HTTP que encerrava a conexão da sala no túnel. As mensagens de conexão também não pedem mais para abrir um iniciador do Windows.',
+  'Todo en Jugar': 'Tudo em Jogar',
+  'Jugar reúne las partidas a solas y con amigos. Elige bot o amigo invitado para cada uno de los tres huecos. Puedes empezar sin esperar: los invitados entran incluso durante la partida y ocupan huecos libres o sustituyen bots. La sala sólo está llena con cuatro jugadores humanos. Si alguien sale, vuelve el bot de su hueco con el nivel que ya tenía.': 'Jogar reúne as partidas sozinho e com amigos. Escolha bot ou amigo convidado para cada uma das três vagas. Comece sem esperar: os convidados podem entrar durante a partida, ocupando vagas livres ou substituindo bots. A sala só fica cheia com quatro jogadores humanos. Se alguém sair, o bot daquela vaga volta com o nível que já tinha.',
   // ---------------- reportar marcas do ranking ----------------
   'Reportar marca sospechosa': 'Reportar recorde suspeito', 'Ya la has reportado': 'Você já reportou',
   'Ya has reportado esta marca': 'Você já reportou este recorde',

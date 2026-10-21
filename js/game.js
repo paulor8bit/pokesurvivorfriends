@@ -105,8 +105,10 @@ G.Game = (() => {
   function startRun(coop = null) {
     holdBy = []; awayBy = null;
     const save = G.DB.save;
-    const mon = G.DEX_BY[save.partner];
-    const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
+    const selected = coop && coop.members.find(m => m.uid === G.Net.uid);
+    const mon = G.DEX_BY[selected ? selected.dex : save.partner];
+    const own = !selected || selected.source === 'local' || !selected.source;
+    const perks = G.Upgrades.perks(own ? G.DB.upgradesOf(mon.dex) : {});
 
     G.UI.hideAll();
     G.UI.chrome(false);
@@ -128,15 +130,15 @@ G.Game = (() => {
     time = 0; pendingLevels = 0;
     runReal = performance.now(); tampered = false;
 
-    pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
+    pl = new G.Player(mon, perks, selected ? !!selected.shiny : !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
     banked = { t1: 0, t10: 0 };
     caught = [];
     // Atajos: movimientos con hueco fijo (save.pbind[dex] = [id del 1, id del 2, ...]),
     // antes de aprender nada: addMove ya los coloca.
-    (save.pbind && save.pbind[mon.dex] || []).forEach((id, i) => { if (id) pl.bind[id] = i; });
-    pl.addMove(G.startMoveOf(mon.dex));
+    (own && save.pbind && save.pbind[mon.dex] || []).forEach((id, i) => { if (id) pl.bind[id] = i; });
+    pl.addMove(own ? G.startMoveOf(mon.dex) : G.baseStartOf(mon.dex));
     // Mejora "Veto": movimientos que no quieres que te salgan.
-    pl.banned = new Set((save.pban && save.pban[mon.dex] || []).slice(0, perks.bans));
+    pl.banned = new Set((own && save.pban && save.pban[mon.dex] || []).slice(0, perks.bans));
     // Mejora "Repertorio": un segundo movimiento de ataque al azar.
     if (perks.startMoves >= 2) {
       const pool = G.Moves.poolFor(mon).filter(id => !pl.hasMove(id) && !pl.banned.has(id) && G.Moves.BY_ID[id].kind !== 'buff');
@@ -144,11 +146,30 @@ G.Game = (() => {
       pl.setActive(0);
     }
 
+    G.Bots.clear();
     if (coop) {
       G.Coop.begin(coop, pl, coopApi);
+      if (G.Coop.isHost) G.Bots.begin(pl, coop.bots || []);
       G.Social.setPlaying(true);
     } else {
       G.Bots.begin(pl);      // compañeros reclutados (sólo en solitario)
+    }
+    if (coop?.snapshot) {
+      const s = coop.snapshot;
+      time = s.time; biome = s.baseBiome;
+      G.World.setBiome(s.worldBiome, true);
+      G.Rift.restore(s.rift); G.Judgment.restore(s.judgment); G.Events.restore(s.event);
+      if (s.weather) G.Weather.force(s.weather.kind, s.weather.left);
+      for (const h of s.hazards || []) G.Hazards.add(h, true);
+      pl.x = s.x + ((selected.slot || 1) - 2) * 38; pl.y = s.y + 40;
+      G.World.collide(pl); pl.invuln = 3;
+      for (let n = 1; n < Math.min(500, s.team.level); n++) {
+        const options = G.LevelUp.offer(pl);
+        const card = options.find(c => c.type === 'new') || options.find(c => c.type === 'up') || options.find(c => c.type === 'stat');
+        if (card) card.apply(pl);
+      }
+      banked = { t1: s.team.t1 || 0, t10: s.team.t10 || 0 };
+      coopApi.syncTeam(s.team);
     }
     G.Camera.x = pl.x; G.Camera.y = pl.y; G.Camera.shake = 0;
     // Hojas de sprites locales: el compañero y los primeros enemigos.
@@ -204,6 +225,9 @@ G.Game = (() => {
 
   const coopApi = {
     team: teamState,
+    snapshot() { return { team: teamState(), time, baseBiome: biome, worldBiome: G.World.biome, x: pl.x, y: pl.y,
+      rift: G.Rift.snapshot(), judgment: G.Judgment.snapshot(), event: G.Events.snapshot(), weather: G.Weather.current,
+      hazards: G.Hazards.all.slice(0, 64).map(h => ({ ...h })) }; },
     summary,
     // Invitado: el anfitrión manda el reloj y lo del equipo.
     syncTeam(t) {
@@ -300,8 +324,9 @@ G.Game = (() => {
 
   function endRun(dead = true) {
     if (state === 'over' || !pl) return;
-    const coop = !!pl.uid;                    // sólo las partidas en grupo le ponen uid
+    const coop = !!pl.hadFriends;
     const wasHost = !!pl.coopHost;
+    if (wasHost && G.Social.room?.run) G.Social.finishRun().catch(() => {});
     const team = coop ? G.Coop.members.slice() : [];
     if (G.Coop.active) G.Coop.end();
     if (coop) G.Social.setPlaying(false);
@@ -328,6 +353,7 @@ G.Game = (() => {
     save.stats.bestTime = Math.max(save.stats.bestTime, Math.floor(time));
     if (coop) save.stats.bestGroupTime = Math.max(save.stats.bestGroupTime || 0, Math.floor(time));
     save.stats.bestLevel = Math.max(save.stats.bestLevel, pl.level);
+    G.Bots.clear();
     save.stats.coinsEarned += coins;
     const judge = G.Judgment.summary();
     if (judge) G.Progress.event('judgeEnd', judge);
@@ -485,7 +511,9 @@ G.Game = (() => {
     if (G.Coop.active) G.Coop.collected(p, who);
     if (mine || p.kind === 'bomb') G.Audio.sfx(PICK_SFX[p.kind]);
     if (p.kind === 'xp' || p.kind === 'xpBig') {
-      pendingLevels += pl.gainXp(p.value * (G.Coop.active ? G.Coop.xpFactor() : 1));
+      const amount = p.value * (G.Coop.active ? G.Coop.xpFactor() : 1);
+      pendingLevels += pl.gainXp(amount);
+      if (!G.Coop.active || G.Coop.isHost) G.Bots.gainXp(amount * pl.xpMul);
       return;
     }
     if (p.kind === 'coin') {
@@ -651,10 +679,11 @@ G.Game = (() => {
       G.FX.ring(pl.x, pl.y, 10, G.Camera.outerRadius(), '#ffffff', 0.7, 6);
     }
 
-    pl.frozen = coop && (G.UI.isOpen('scr-pause') || G.UI.isOpen('scr-item'));
+    pl.frozen = coop && ['scr-pause', 'scr-item', 'scr-lobby', 'scr-friends', 'scr-menu'].some(G.UI.isOpen);
     pl.update(dt);
     if (coop) {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
+      if (G.Coop.isHost) G.Bots.update(dt, pl, time); else G.Bots.updateRemote(dt, time);
       if (pl.dead) reviveTick(dt);
     } else {
       G.Bots.update(dt, pl, time);
@@ -767,11 +796,12 @@ G.Game = (() => {
     ctx.save();
     ctx.scale(G.Camera.scale, G.Camera.scale);
     G.Camera.apply(ctx);
-    drawScene(G.Camera, G.Coop.active ? [pl, ...G.Coop.puppets()] : [pl, ...G.Bots.list()]);
+    drawScene(G.Camera, [pl, ...(G.Coop.active ? G.Coop.puppets() : []), ...G.Bots.list()]);
     G.Projectiles.draw(ctx);
     G.Combat.drawAirFields(ctx);
     G.FX.draw(ctx);
     G.Judgment.drawAir(ctx);
+    if (G.Coop.active) for (const p of [pl, ...G.Coop.puppets()]) p.drawStatus(ctx);
     ctx.restore();
 
     G.Weather.draw(ctx, w, h, frameDt);
@@ -920,7 +950,7 @@ G.Game = (() => {
 G.Flow = {
   boot() {
     G.UI.initChrome();
-    G.TestUI.init(); G.MenuUI.init(); G.GachaUI.init();
+    G.StartersUI.init(); G.MenuUI.init(); G.GachaUI.init();
     G.SocialUI.init(); G.GoalsUI.init(); G.ProfileUI.init(); G.SettingsUI.init(); G.NewsUI.init(); G.Updater.init();
     // Tu nombre arriba a la derecha abre tu perfil.
     document.getElementById('user-pill').onclick = () => G.GoalsUI.open('profile');
@@ -956,13 +986,16 @@ G.Flow = {
   },
   afterLoad() {
     G.Audio.music('village');
-    if (!G.DB.save.partner) G.TestUI.start();
+    if (!G.DB.save.partner && G.SocialUI.hasInvite()) G.FriendsUI.open();
+    else if (!G.DB.save.partner) G.StartersUI.start();
     else this.goMenu();
   },
   goMenu() {
     if (G.Game.state !== 'ui') G.Game.toUI();
     G.Audio.music('village');
-    G.MenuUI.open();
+    if (G.DB.save.partner) G.MenuUI.open();
+    else if (G.Social.room) G.LobbyUI.open();
+    else G.StartersUI.start();
     G.SocialUI.consumeInvite();
   },
   /** Al cerrar el resumen: a la sala si sigues en una, si no al menú. */
@@ -974,10 +1007,10 @@ G.Flow = {
       G.LobbyUI.open();
     } else this.goMenu();
   },
-  play() { G.Game.startRun(); },
+  play() { return G.FriendsUI.open(); },
   /** Empieza la partida en grupo (el anfitrión la manda a todos). */
   startCoop(cfg) {
-    if (G.Game.state !== 'ui' || !G.Social.room) return;
+    if (!['ui', 'over'].includes(G.Game.state) || !G.Social.room || G.Coop.active) return;
     G.LobbyUI.close();
     G.Game.startRun(cfg);
   }

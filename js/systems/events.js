@@ -348,6 +348,8 @@ G.Events = (() => {
 
   return {
     reset, update, bag, onNet, drawables, drawHud,
+    snapshot() { return cur ? { ...cur } : null; },
+    restore(s) { cur = s ? { ...s } : null; },
     get golden() { return !!cur && cur.id === 'gold'; },
     get current() { return cur ? cur.id : null; },
     /** Para pruebas. */

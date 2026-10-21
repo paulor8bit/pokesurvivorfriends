@@ -11,6 +11,16 @@ public final class RoomHub {
     private final Map<String, Client> clients = new LinkedHashMap<>();
     private final Map<String, Room> rooms = new HashMap<>();
     private final SecureRandom random = new SecureRandom();
+    private static final Set<Integer> STARTERS = new HashSet<>(Arrays.asList(1,4,7,152,155,158,252,255,258,387,390,393,495,498,501,650,653,656,722,725,728,810,813,816,906,909,912,54,79));
+    private static JSONArray catalogOf(JSONArray input) throws JSONException {
+        Map<Integer, JSONObject> entries = new LinkedHashMap<>();
+        if (input != null) for (int i = 0; i < Math.min(1025, input.length()); i++) {
+            JSONObject m = input.optJSONObject(i); if (m == null) continue;
+            double dex = m.optDouble("dex", 0);
+            if (dex == Math.floor(dex) && dex >= 1 && dex <= 1025) entries.put((int)dex, json("dex", (int)dex, "shiny", Boolean.TRUE.equals(m.opt("shiny"))));
+        }
+        return new JSONArray(entries.values());
+    }
     public static JSONObject json(Object... pairs) {
         JSONObject j = new JSONObject();
         try { for (int i = 0; i < pairs.length; i += 2) j.put((String)pairs[i], pairs[i + 1]); }
@@ -30,9 +40,39 @@ public final class RoomHub {
         void emit(JSONObject value) { send.accept(value.toString()); }
     }
     private static final class Room {
-        String id, host; boolean open = true;
+        String id, host; boolean open = true; JSONArray catalog = new JSONArray();
+        JSONArray slots = new JSONArray(); JSONObject run;
         Map<String, JSONObject> members = new LinkedHashMap<>();
-        JSONObject view() { return json("id", id, "host", host, "open", open, "members", new JSONArray(members.values())); }
+        JSONObject view() {
+            List<JSONObject> people = new ArrayList<>(members.values()); people.sort(Comparator.comparingInt(p -> p.optInt("slot")));
+            Set<Integer> occupied = new HashSet<>(); for (JSONObject p : people) occupied.add(p.optInt("slot"));
+            JSONArray bots = new JSONArray();
+            for (int i = 0; i < 3; i++) { JSONObject s = slots.optJSONObject(i); if (s != null && s.optString("kind").equals("bot") && !occupied.contains(i + 1)) bots.put(json("kind", "bot", "slot", i + 1, "dex", s.optInt("dex"))); }
+            return json("id", id, "host", host, "open", open, "catalog", catalog, "members", new JSONArray(people), "slots", slots, "bots", bots, "run", run == null ? JSONObject.NULL : run);
+        }
+    }
+    private static JSONArray slotsOf(JSONArray input, JSONArray catalog) throws Exception {
+        Set<Integer> owned = new HashSet<>(), used = new HashSet<>();
+        for (int i = 0; i < catalog.length(); i++) owned.add(catalog.getJSONObject(i).getInt("dex"));
+        JSONArray result = new JSONArray();
+        for (int i = 0; i < 3; i++) {
+            JSONObject s = input == null ? null : input.optJSONObject(i);
+            if (s == null || !s.optString("kind").equals("bot")) result.put(json("kind", "friend"));
+            else {
+                int dex = s.optInt("dex"); if (!owned.contains(dex) || !used.add(dex)) throw new Exception("Elige un Pokémon distinto de tu colección para cada bot.");
+                result.put(json("kind", "bot", "dex", dex));
+            }
+        }
+        return result;
+    }
+    private static int freeSlot(Room room) {
+        Set<Integer> occupied = new HashSet<>(); for (JSONObject m : room.members.values()) occupied.add(m.optInt("slot"));
+        int first = -1;
+        for (int i = 1; i < 4; i++) if (!occupied.contains(i)) {
+            if (first < 0) first = i;
+            if (!room.slots.optJSONObject(i - 1).optString("kind").equals("bot")) return i;
+        }
+        return first;
     }
     public synchronized Client connect(Consumer<String> send) {
         if (clients.size() >= 64) throw new IllegalStateException("Servidor cheio.");
@@ -50,13 +90,21 @@ public final class RoomHub {
     }
     public synchronized void disconnect(Client c) { if (c != null) { leave(c); clients.remove(c.uid); } }
     public synchronized void close() { for (Client c : new ArrayList<>(clients.values())) disconnect(c); rooms.clear(); }
-    private JSONObject member(Client c, JSONObject input) throws Exception {
+    private JSONObject member(Client c, JSONObject input, Room room) throws Exception {
         if (input == null) throw new Exception("Elige tu Pokémon antes de entrar.");
         String name = Normalizer.normalize(input.optString("name", "").trim(), Normalizer.Form.NFC);
         if (!name.matches("[\\p{L}\\p{N}_ -]{2,20}")) throw new Exception("Usa un apodo de 2 a 20 letras o números.");
         double dex = input.optDouble("dex", 0);
         if (dex != Math.floor(dex) || dex < 1 || dex > 1025) throw new Exception("Elige tu Pokémon antes de entrar.");
-        return json("uid", c.uid, "name", name, "dex", (int)dex, "shiny", Boolean.TRUE.equals(input.opt("shiny")));
+        String source = input.optString("source", "local");
+        if (!source.equals("host") && !source.equals("starter")) source = "local";
+        JSONObject entry = null;
+        if (room != null) for (int i = 0; i < room.catalog.length(); i++) {
+            JSONObject m = room.catalog.getJSONObject(i); if (m.getInt("dex") == (int)dex) { entry = m; break; }
+        }
+        if ((source.equals("starter") && !STARTERS.contains((int)dex)) || (source.equals("host") && entry == null && !STARTERS.contains((int)dex))) throw new Exception("Ese Pokémon no está disponible en esta sala.");
+        boolean shiny = Boolean.TRUE.equals(input.opt("shiny")) && !source.equals("starter") && (!source.equals("host") || (entry != null && entry.optBoolean("shiny")));
+        return json("uid", c.uid, "name", name, "dex", (int)dex, "shiny", shiny, "source", source);
     }
     public synchronized void receive(Client c, String raw) {
         JSONObject m = null;
@@ -67,26 +115,56 @@ public final class RoomHub {
             m = new JSONObject(raw); Room r = rooms.get(c.room); JSONObject result = json("k", "result", "id", m.opt("id"), "ok", true);
             switch (m.optString("k")) {
                 case "create": {
-                    JSONObject info = member(c, m.optJSONObject("member"));
+                    JSONObject info = member(c, m.optJSONObject("member"), null);
                     if (r != null) throw new Exception("Sal de tu sala antes de crear otra.");
                     if (rooms.size() >= 32) throw new Exception("Hay demasiadas salas. Inténtalo más tarde.");
                     Room next = new Room(); do { next.id = id(6); } while (rooms.containsKey(next.id));
-                    next.host = c.uid; next.members.put(c.uid, info); rooms.put(next.id, next); c.room = next.id;
+                    next.host = c.uid; next.catalog = catalogOf(m.optJSONArray("catalog")); next.slots = slotsOf(m.optJSONArray("slots"), next.catalog);
+                    info.put("slot", 0); next.members.put(c.uid, info); rooms.put(next.id, next); c.room = next.id;
                     result.put("room", next.view()); break;
                 }
                 case "join": {
-                    JSONObject info = member(c, m.optJSONObject("member"));
                     Room next = rooms.get(m.optString("code").replaceAll("[\\s-]", "").toUpperCase(Locale.ROOT));
                     if (r != null) throw new Exception("Sal de tu sala antes de entrar en otra.");
                     if (next == null) throw new Exception("Esa sala ya no existe. Pide un nuevo enlace.");
                     if (!next.open) throw new Exception("La partida de esa sala ya ha empezado.");
                     if (next.members.size() >= 4) throw new Exception("La sala está llena (máximo 4).");
+                    JSONObject info = member(c, m.optJSONObject("member"), next);
+                    info.put("slot", freeSlot(next));
                     c.room = next.id; next.members.put(c.uid, info); result.put("room", next.view()); c.emit(result); broadcast(next); return;
                 }
                 case "leave": leave(c); break;
+                case "catalog": {
+                    Room next = rooms.get(m.optString("code").replaceAll("[\\s-]", "").toUpperCase(Locale.ROOT));
+                    if (next == null) throw new Exception("Esa sala ya no existe. Pide un nuevo enlace.");
+                    if (!next.open) throw new Exception("La partida de esa sala ya ha empezado.");
+                    result.put("catalog", next.catalog); break;
+                }
                 case "member":
                     if (r == null) throw new Exception("No estás en una sala.");
-                    r.members.put(c.uid, member(c, m.optJSONObject("member"))); broadcast(r); break;
+                    if (!r.open || r.run != null) throw new Exception("La partida de esa sala ya ha empezado.");
+                    if (r.host.equals(c.uid) && m.optJSONArray("catalog") != null) r.catalog = catalogOf(m.optJSONArray("catalog"));
+                    JSONObject info = member(c, m.optJSONObject("member"), r); info.put("slot", r.members.get(c.uid).optInt("slot"));
+                    r.members.put(c.uid, info); broadcast(r); break;
+                case "slots": {
+                    if (r == null || !r.host.equals(c.uid)) throw new Exception("Sólo el anfitrión puede cambiar los huecos.");
+                    JSONArray next = slotsOf(m.optJSONArray("slots"), r.catalog);
+                    for (JSONObject p : r.members.values()) {
+                        int slot = p.optInt("slot") - 1; if (slot < 0) continue;
+                        JSONObject a = next.getJSONObject(slot), b = r.slots.getJSONObject(slot);
+                        if (a.optString("kind").equals("bot") && (!b.optString("kind").equals("bot") || a.optInt("dex") != b.optInt("dex"))) throw new Exception("Ese hueco está ocupado por un jugador.");
+                    }
+                    r.slots = next; broadcast(r); break;
+                }
+                case "start": {
+                    if (r == null || !r.host.equals(c.uid)) throw new Exception("Sólo el anfitrión puede empezar.");
+                    if (r.run != null) throw new Exception("La partida ya está en marcha.");
+                    double seed = m.optDouble("seed", -1); if (seed < 0 || seed > 2147483647 || seed != Math.floor(seed)) throw new Exception("Mensaje inválido.");
+                    r.run = json("id", id(8), "seed", (int)seed); r.open = true; broadcast(r); result.put("room", r.view()); break;
+                }
+                case "finish":
+                    if (r == null || !r.host.equals(c.uid)) throw new Exception("Sólo el anfitrión puede terminar.");
+                    r.run = null; r.open = true; broadcast(r); break;
                 case "open":
                     if (r == null || !r.host.equals(c.uid)) throw new Exception("Sólo el anfitrión puede empezar.");
                     r.open = Boolean.TRUE.equals(m.opt("open")); broadcast(r); break;

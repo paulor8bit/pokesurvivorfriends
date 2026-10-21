@@ -5,7 +5,7 @@
   const NEED = ['U', 'I18n', 'Settings', 'DB', 'Audio', 'Input', 'Touch', 'Sprites', 'Camera', 'Moves', 'Enemies', 'Upgrades', 'Items',
                 'World', 'FX', 'Projectiles', 'EnemyMgr', 'Pickups', 'Player', 'Combat', 'Spawner', 'LevelUp', 'Gacha',
                 'Rift', 'Weather', 'Calendar', 'Progress', 'Hazards', 'Social', 'Net', 'Coop', 'Icons', 'UI', 'HUD',
-                'MenuUI', 'RunUI', 'SettingsUI', 'Bots', 'BotsUI', 'Game', 'Flow'];
+                'StartersUI', 'MenuUI', 'RunUI', 'SettingsUI', 'Bots', 'BotsUI', 'Game', 'Flow'];
   function broken() {
     // (En la versión publicada G no está en window: va encerrado, ver tools/build.js.)
     const miss = NEED.filter(k => typeof G !== 'object' || !G[k]);
@@ -25,7 +25,7 @@
     const en = typeof G === 'object' && G.I18n ? G.I18n.lang === 'en' : !/^es/i.test(navigator.language || '');
     const el = document.getElementById('boot');
     el.setAttribute('translate', 'no');
-    el.innerHTML = '<div class="boot-in"><h1>PokéSurvivor</h1>' + (en
+    el.innerHTML = '<div class="boot-in"><h1>PokeSuvivor Friends</h1>' + (en
       ? '<p><b>We are under maintenance.</b></p><p>We are moving the game to new servers so it can stay free for everyone. ' +
         'Your account, your save and your Pokémon are safe. Please come back in a few hours!</p>'
       : '<p><b>Estamos en mantenimiento.</b></p><p>Estamos mudando el juego a servidores nuevos para que siga siendo gratis para todos. ' +

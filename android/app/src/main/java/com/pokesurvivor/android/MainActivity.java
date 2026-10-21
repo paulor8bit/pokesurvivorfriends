@@ -31,7 +31,7 @@ public final class MainActivity extends Activity {
                 if ("pokesurvivor".equals(u.getScheme()) && "share".equals(u.getHost())) {
                     String link = u.getQueryParameter("url");
                     if (link != null && (link.startsWith("https://") || link.startsWith("http://"))) {
-                        Intent send = new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "Entre na minha sala de PokéSurvivor! " + link);
+                        Intent send = new Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "Entre na minha sala de PokeSuvivor Friends! " + link);
                         startActivity(Intent.createChooser(send, "Compartilhar convite"));
                     }
                     return true;
@@ -65,9 +65,11 @@ public final class MainActivity extends Activity {
         } catch (Exception ignored) {}
         return "";
     }
-    @Override protected void onResume() { super.onResume(); if (web != null) { web.onResume(); web.resumeTimers(); } if (server != null) server.localUrl = lanUrl(); }
+    @Override protected void onResume() { super.onResume(); if (web != null) web.onResume(); if (server != null) server.localUrl = lanUrl(); }
     @Override protected void onPause() {
-        if (web != null) { web.evaluateJavascript("window.dispatchEvent(new Event('blur'))", null); web.onPause(); web.pauseTimers(); }
+        // Opening Android's share sheet is a temporary pause, not closing the
+        // host. Keep JavaScript and room handshakes alive while sharing a link.
+        if (web != null) { web.evaluateJavascript("window.dispatchEvent(new Event('blur'))", null); web.onPause(); }
         super.onPause();
     }
     @Override public void onBackPressed() {

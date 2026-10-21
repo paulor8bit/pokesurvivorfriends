@@ -1,4 +1,4 @@
-# PokéSurvivor Online
+# PokeSuvivor Friends
 
 Fork independente criado por **Paulinho Ricardo — gatinho.punkeca**, baseado no [PokéSurvivor de JPTER78](https://github.com/JPTER78/pokesurvivor).
 
@@ -8,7 +8,7 @@ O foco deste projeto é um aplicativo Windows para jogar solo ou criar salas tem
 
 ## Baixar e instalar
 
-- **[Baixar para Windows x64](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Online-1.0.0-x64.exe)** — aplicativo portátil; baixe e abra o executável. Mantenha a pasta de dados criada ao lado dele para preservar o progresso.
+- **[Baixar para Windows x64](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Online-1.1.0-x64.exe)** — aplicativo portátil; baixe e abra o executável. Mantenha a pasta de dados criada ao lado dele para preservar o progresso.
 - **[Baixar APK Android](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Android.apk)** — versão de teste para Android 8 ou superior, ARM64. Instale o APK no celular; veja [as instruções e limitações](docs/ANDROID.md).
 - [Todas as versões e arquivos de verificação](https://github.com/paulor8bit/pokesurvivorfriends/releases).
 
@@ -17,11 +17,13 @@ Não é necessário baixar o código-fonte nem instalar Node.js para jogar.
 ## Jogar
 
 Abra `PokéSurvivor Online.lnk`, `Jogar.bat` ou o executável em `dist/desktop`.
-Em **Jogar com amigos**, crie uma sala e envie o convite. O computador do anfitrião e o aplicativo precisam permanecer abertos. O túnel gratuito gera um endereço temporário, que muda ao reiniciar.
+Entre em **Jogar** e escolha **Bot** ou **Amigo convidado** para cada uma das três vagas. Você pode começar sozinho e compartilhar o convite a qualquer momento. Um amigo que entra durante a partida ocupa uma vaga livre ou substitui um bot; a sala só fica cheia com quatro jogadores humanos. O computador do anfitrião e o aplicativo precisam permanecer abertos. O túnel gratuito gera um endereço temporário, que muda ao reiniciar.
 
 O progresso do anfitrião permanece nos dados locais do aplicativo. **Não apague `dist/desktop/PokeSurvivor-data`**: ela pode conter seu salvamento. Para convidados, cada endereço temporário tem seu próprio armazenamento no navegador.
 
 Instruções completas: [Jogar online](docs/JOGAR-ONLINE.md).
+
+Convidados podem escolher iniciais ou Pokémon emprestados da coleção do anfitrião. Quem já joga no próprio aplicativo pode colar o link completo em **Jogar → Entrar por convite** e selecionar **Minha coleção**, usando suas melhorias e seu ataque inicial salvos. Os empréstimos não desbloqueiam Pokémon no salvamento do convidado.
 
 ## Android
 

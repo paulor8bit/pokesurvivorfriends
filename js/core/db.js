@@ -39,7 +39,7 @@ G.DB = (() => {
       ach: {},                // id -> fecha: logros conseguidos
       missions: {},           // misiones del día / semana (systems/progress.js)
       profile: { favs: [], title: '' },   // perfil público: 3 favoritos y título
-      bots: { slots: 0, party: [] },      // equipo de compañeros (desbloqueados con monedas)
+      bots: { slots: 0, party: [], training: {} }, // afinidade, ataques aprendidos e formação
       stats: { runs: 0, bestTime: 0, bestLevel: 0, totalKills: 0, pulls: 0, coinsEarned: 0, shinies: 0,
                bossesTotal: 0, riftWins: 0, evolutions: 0, missionsDone: 0, groupRuns: 0, bestGroupTime: 0 }
     };
@@ -95,6 +95,28 @@ G.DB = (() => {
     if (!isObj(s.pstart)) s.pstart = {};
     for (const d of Object.keys(s.pstart)) {
       if (typeof s.pstart[d] !== 'string' || (G.DEX_BY && !G.DEX_BY[d]) || (G.Moves && !G.Moves.BY_ID[s.pstart[d]])) delete s.pstart[d];
+    }
+    // Preserva equipes antigas e valida o treino permanente de cada parceiro.
+    if (!isObj(s.bots)) s.bots = { slots: 0, party: [] };
+    s.bots.slots = Math.min(3, n(s.bots.slots));
+    const botParty = Array.isArray(s.bots.party) ? s.bots.party : [], usedBots = new Set();
+    s.bots.party = Array.from({ length: 3 }, (_, i) => {
+      const dex = +botParty[i];
+      if (i >= s.bots.slots || !s.owned[dex] || (G.DEX_BY && !G.DEX_BY[dex]) || usedBots.has(dex)) return null;
+      usedBots.add(dex); return dex;
+    });
+    if (!isObj(s.bots.training)) s.bots.training = {};
+    for (const dex of Object.keys(s.bots.training)) {
+      const p = s.bots.training[dex];
+      if (!s.owned[dex] || (G.DEX_BY && !G.DEX_BY[dex]) || !isObj(p)) { delete s.bots.training[dex]; continue; }
+      p.xp = Math.min(1e12, n(p.xp));
+      const valid = id => typeof id === 'string' && (!G.Moves || (G.Moves.BY_ID[id] && G.Moves.BY_ID[id].kind !== 'buff'));
+      p.learned = [...new Set((Array.isArray(p.learned) ? p.learned : []).filter(valid))];
+      const seen = new Set();
+      p.loadout = (Array.isArray(p.loadout) ? p.loadout : []).slice(0, 4).map(id => {
+        if (!valid(id) || seen.has(id)) return null;
+        seen.add(id); return id;
+      });
     }
     // Atajos: 4 huecos con un movimiento que exista (o null), sin repetir.
     if (s.pbind && typeof s.pbind === 'object') {
@@ -224,6 +246,17 @@ G.DB = (() => {
     // Movimiento inicial: el de la versión más reciente; si no lo tenía elegido, el de la otra.
     r.pstart = r.pstart || {};
     for (const d in older.pstart || {}) if (!(d in r.pstart)) r.pstart[d] = older.pstart[d];
+    r.bots = r.bots || { slots: 0, party: [] };
+    r.bots.slots = Math.max(r.bots.slots || 0, older.bots?.slots || 0);
+    r.bots.training ||= {};
+    for (const [dex, past] of Object.entries(older.bots?.training || {})) {
+      const current = r.bots.training[dex];
+      if (!current) r.bots.training[dex] = JSON.parse(JSON.stringify(past));
+      else {
+        current.xp = Math.max(current.xp || 0, past.xp || 0);
+        current.learned = [...new Set([...(current.learned || []), ...(past.learned || [])])];
+      }
+    }
     // Lo conseguido nunca se pierde: unión de legendarios, arenas, objetos, logros...
     for (const coll of ['legends', 'arenas', 'itemsFound', 'evoMoves', 'ach']) {
       r[coll] = r[coll] || {};

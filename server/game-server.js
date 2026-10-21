@@ -7,6 +7,7 @@ const { gzip: gzipCallback } = require('node:zlib');
 const { promisify } = require('node:util');
 const compress = promisify(gzipCallback);
 const { WebSocketServer, WebSocket } = require('ws');
+const { catalogOf, choiceOf, originAllowed, slotsOf, freeSlot, roomView } = require('./room-catalog');
 
 function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
   const rooms = new Map(), clients = new Map();
@@ -19,7 +20,7 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
     if (ws.bufferedAmount > 4 * 1024 * 1024) { ws.terminate(); return; }
     ws.send(JSON.stringify(msg));
   };
-  const view = room => ({ id: room.id, host: room.host, open: room.open, members: [...room.members.values()] });
+  const view = roomView;
   const broadcast = room => {
     for (const uid of room.members.keys()) send(clients.get(uid).ws, { k: 'room', room: view(room) });
   };
@@ -35,12 +36,12 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
       }
     } else { room.members.delete(client.uid); broadcast(room); }
   }
-  function member(client, input) {
+  function member(client, input, room) {
     const name = typeof input?.name === 'string' ? input.name.trim().normalize('NFC') : '';
     if (!/^[\p{L}\p{N}_ -]{2,20}$/u.test(name)) throw new Error('Usa un apodo de 2 a 20 letras o números.');
     const dex = Number(input.dex);
     if (!Number.isInteger(dex) || dex < 1 || dex > 1025) throw new Error('Elige tu Pokémon antes de entrar.');
-    return { uid: client.uid, name, dex, shiny: input.shiny === true };
+    return { uid: client.uid, name, dex, ...choiceOf(input, room) };
   }
   const server = http.createServer(async (req, res) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -80,8 +81,7 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
   });
   const wss = new WebSocketServer({ noServer: true, maxPayload: 256 * 1024, perMessageDeflate: false });
   server.on('upgrade', (req, socket, head) => {
-    let originOk = false;
-    try { originOk = !req.headers.origin || new URL(req.headers.origin).host === req.headers.host; } catch { /* invalid origin */ }
+    const originOk = originAllowed(req.headers.origin, req.headers.host);
     if (req.url !== '/rooms' || !originOk || clients.size >= 64) { socket.destroy(); return; }
     wss.handleUpgrade(req, socket, head, ws => wss.emit('connection', ws));
   });
@@ -108,23 +108,52 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
             if (room) throw new Error('Sal de tu sala antes de crear otra.');
             if (rooms.size >= 32) throw new Error('Hay demasiadas salas. Inténtalo más tarde.');
             let id; do { id = randomBytes(6).toString('hex').toUpperCase(); } while (rooms.has(id));
-            const next = { id, host: client.uid, open: true, members: new Map([[client.uid, info]]) };
+            info.slot = 0;
+            const catalog = catalogOf(m.catalog);
+            const next = { id, host: client.uid, open: true, catalog, slots: slotsOf(m.slots, catalog), run: null, members: new Map([[client.uid, info]]) };
             client.room = id; rooms.set(id, next); reply({ ok: true, room: view(next) }); break;
           }
           case 'join': {
-            const info = member(client, m.member);
             const next = rooms.get(String(m.code || '').replace(/[\s-]/g, '').toUpperCase());
             if (room) throw new Error('Sal de tu sala antes de entrar en otra.');
             if (!next) throw new Error('Esa sala ya no existe. Pide un nuevo enlace.');
             if (!next.open) throw new Error('La partida de esa sala ya ha empezado.');
             if (next.members.size >= 4) throw new Error('La sala está llena (máximo 4).');
+            const info = member(client, m.member, next);
+            info.slot = freeSlot(next);
             client.room = next.id; next.members.set(client.uid, info);
             reply({ ok: true, room: view(next) }); broadcast(next); break;
           }
           case 'leave': leave(client); reply({ ok: true }); break;
+          case 'catalog': {
+            const next = rooms.get(String(m.code || '').replace(/[\s-]/g, '').toUpperCase());
+            if (!next) throw new Error('Esa sala ya no existe. Pide un nuevo enlace.');
+            if (!next.open) throw new Error('La partida de esa sala ya ha empezado.');
+            reply({ ok: true, catalog: next.catalog }); break;
+          }
           case 'member': {
             if (!room) throw new Error('No estás en una sala.');
-            room.members.set(client.uid, member(client, m.member)); broadcast(room); reply({ ok: true }); break;
+            if (!room.open || room.run) throw new Error('La partida de esa sala ya ha empezado.');
+            if (room.host === client.uid && Array.isArray(m.catalog)) room.catalog = catalogOf(m.catalog);
+            room.members.set(client.uid, { ...member(client, m.member, room), slot: room.members.get(client.uid).slot }); broadcast(room); reply({ ok: true }); break;
+          }
+          case 'slots': {
+            if (!room || room.host !== client.uid) throw new Error('Sólo el anfitrión puede cambiar los huecos.');
+            const next = slotsOf(m.slots, room.catalog);
+            for (const info of room.members.values()) if (info.slot && next[info.slot - 1].kind === 'bot' && JSON.stringify(next[info.slot - 1]) !== JSON.stringify(room.slots[info.slot - 1])) throw new Error('Ese hueco está ocupado por un jugador.');
+            room.slots = next; broadcast(room); reply({ ok: true }); break;
+          }
+          case 'start': {
+            if (!room || room.host !== client.uid) throw new Error('Sólo el anfitrión puede empezar.');
+            if (room.run) throw new Error('La partida ya está en marcha.');
+            const seed = Number(m.seed);
+            if (!Number.isInteger(seed) || seed < 0 || seed > 0x7fffffff) throw new Error('Mensaje inválido.');
+            room.run = { id: randomBytes(8).toString('hex'), seed }; room.open = true;
+            broadcast(room); reply({ ok: true, room: view(room) }); break;
+          }
+          case 'finish': {
+            if (!room || room.host !== client.uid) throw new Error('Sólo el anfitrión puede terminar.');
+            room.run = null; room.open = true; broadcast(room); reply({ ok: true }); break;
           }
           case 'open': {
             if (!room || room.host !== client.uid) throw new Error('Sólo el anfitrión puede empezar.');

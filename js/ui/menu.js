@@ -16,12 +16,11 @@ G.MenuUI = (() => {
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
       b.onclick = () => {
         const go = b.dataset.go;
-        if (go === 'play') { if (G.Social.room) G.LobbyUI.open(); else G.Flow.play(); }
+        if (go === 'play') G.FriendsUI.open();
         else if (go === 'dex') openDex();
         else if (go === 'upgrades') openUpgrades();
         else if (go === 'gacha') G.GachaUI.open();
         else if (go === 'goals') G.GoalsUI.open();
-        else if (go === 'friends') G.FriendsUI.open();
         else if (go === 'bots') G.BotsUI.open();
         else if (go === 'settings') G.SettingsUI.open();
       };
@@ -34,6 +33,10 @@ G.MenuUI = (() => {
 
   function open() {
     const s = G.DB.save;
+    if (!s.partner || !G.DEX_BY[s.partner]) {
+      if (G.Social.room) G.LobbyUI.open(); else G.StartersUI.start();
+      return;
+    }
     const mon = G.DEX_BY[s.partner];
     const shiny = !!s.partnerShiny && G.DB.ownsShiny(mon.dex);
     G.UI.chrome(true);
@@ -77,19 +80,11 @@ G.MenuUI = (() => {
     G.InvitePop.refresh();
   }
 
-  /** Texto bajo "Amigos" y "Jugar": quién está en línea, solicitudes, sala. */
+  /** Texto bajo Jugar: vuelve a la sala o prepara el equipo. */
   function socialLine() {
     const room = G.Social.room;
     const play = document.querySelector('#scr-menu [data-go=play] small');
-    if (play) play.textContent = room ? 'Volver a tu sala (' + room.members.length + '/' + G.Social.MAX_PLAYERS + ')' : 'Entra en la mazmorra';
-    const fr = G.Social.friends;
-    const on = fr.filter(f => f.status === 'ok' && f.online).length;
-    const req = fr.filter(f => f.status === 'in').length;
-    const parts = [];
-    if (on) parts.push(on + ' en línea');
-    if (req) parts.push(req + (req === 1 ? ' solicitud' : ' solicitudes'));
-    $('menu-friends-sub').textContent = room ? 'Volver a tu sala (' + room.members.length + '/4)' : 'Sin cuenta · enlace o código · hasta 4';
-    $('menu-friends-sub').classList.toggle('gold', req > 0);
+    if (play) play.textContent = room ? 'Volver a tu sala (' + room.members.length + '/' + G.Social.MAX_PLAYERS + ')' : 'Configura tu equipo e invita amigos';
   }
 
   // ---------------- colección ----------------

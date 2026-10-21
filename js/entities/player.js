@@ -553,11 +553,33 @@ G.Player = class Player {
       ctx.stroke();
       ctx.restore();
     }
+    // Os participantes online desenham os indicadores depois do cenário.
+    if (!this.uid) this.drawStatus(ctx);
+  }
+
+  drawStatus(ctx) {
+    if (this.uid) {
+      const max = Number.isFinite(this.maxHp) ? Math.max(1, Math.round(this.maxHp)) : 1;
+      const hp = this.dead || !Number.isFinite(this.hp) ? 0 : Math.max(0, Math.min(max, Math.ceil(this.hp)));
+      const fraction = hp / max, width = 54, height = 5;
+      const x = this.x - width / 2, y = this.y - this.bodyH - 6;
+      ctx.save();
+      ctx.fillStyle = 'rgba(4,10,24,.9)'; ctx.fillRect(x - 1, y - 1, width + 2, height + 2);
+      ctx.fillStyle = '#253047'; ctx.fillRect(x, y, width, height);
+      ctx.fillStyle = fraction > 0.5 ? '#5fe08a' : fraction > 0.25 ? '#ffd23f' : '#ff5f6d';
+      if (hp > 0) ctx.fillRect(x, y, width * fraction, height);
+      ctx.font = '700 7px Pixelify,"Segoe UI",sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+      ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(0,0,0,.9)'; ctx.fillStyle = '#fff';
+      const label = `HP ${hp} / ${max}`;
+      ctx.strokeText(label, this.x, y - 3); ctx.fillText(label, this.x, y - 3);
+      ctx.restore();
+    }
     if (this.tag) {
       ctx.save();
       ctx.font = '700 7px Pixelify,"Segoe UI",sans-serif';
       ctx.textAlign = 'center';
-      const y = this.y - this.bodyH - 8;
+      const y = this.y - this.bodyH - (this.uid ? 22 : 8);
       ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(0,0,0,.75)';
       ctx.strokeText(this.tag, this.x, y);
       ctx.fillStyle = this.dead ? '#ff8a96' : this.tagColor || '#fff';

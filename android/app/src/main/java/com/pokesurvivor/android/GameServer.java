@@ -2,6 +2,7 @@ package com.pokesurvivor.android;
 
 import fi.iki.elonen.NanoWSD;
 import java.io.*;
+import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -11,26 +12,46 @@ public final class GameServer extends NanoWSD {
     private final Assets assets;
     private final RoomHub hub = new RoomHub();
     private final Set<Peer> peers = ConcurrentHashMap.newKeySet();
+    private final ThreadLocal<Socket> requestSocket = new ThreadLocal<>();
     private final ScheduledExecutorService heartbeat = Executors.newSingleThreadScheduledExecutor();
     public volatile String publicUrl = "", localUrl = "", tunnelMessage = "Preparando o convite pela internet…";
     public GameServer(Assets assets) { super("0.0.0.0", 8787); this.assets = assets; }
     public void begin() throws IOException {
         start(15000, true);
-        heartbeat.scheduleAtFixedRate(() -> { for (Peer p : peers) { try { if (!p.alive) p.close(WebSocketFrame.CloseCode.GoingAway, "Timeout", false); else { p.alive = false; p.ping(new byte[0]); } } catch (IOException e) { peers.remove(p); hub.disconnect(p.client); } } }, 15, 15, TimeUnit.SECONDS);
+        heartbeat.scheduleAtFixedRate(() -> { for (Peer p : peers) { try { if (!p.alive) p.terminate(); else { p.alive = false; p.ping(new byte[0]); } } catch (IOException e) { p.terminate(); } } }, 15, 15, TimeUnit.SECONDS);
+    }
+    @Override protected ClientHandler createClientHandler(Socket socket, InputStream input) {
+        return new ClientHandler(input, socket) {
+            @Override public void run() {
+                requestSocket.set(socket);
+                try { super.run(); } finally { requestSocket.remove(); }
+            }
+        };
     }
     @Override protected boolean isWebsocketRequested(IHTTPSession s) {
         if (!super.isWebsocketRequested(s) || !"/rooms".equals(s.getUri()) || peers.size() >= 64) return false;
         String origin = s.getHeaders().get("origin"), host = s.getHeaders().get("host");
-        try { return origin == null || new java.net.URI(origin).getAuthority().equals(host); }
+        try {
+            if (origin == null) return true;
+            java.net.URI uri = new java.net.URI(origin);
+            return ("http".equals(uri.getScheme()) || "https".equals(uri.getScheme())) &&
+                (uri.getAuthority().equals(host) || Arrays.asList("localhost", "127.0.0.1", "[::1]").contains(uri.getHost()));
+        }
         catch (Exception e) { return false; }
     }
-    @Override protected WebSocket openWebSocket(IHTTPSession s) { return new Peer(s); }
+    @Override protected WebSocket openWebSocket(IHTTPSession s) { return new Peer(s, requestSocket.get()); }
     private final class Peer extends WebSocket {
+        final Socket socket;
         RoomHub.Client client; volatile boolean alive = true;
-        Peer(IHTTPSession s) { super(s); }
+        Peer(IHTTPSession s, Socket socket) { super(s); this.socket = socket; }
+        void terminate() { try { socket.close(); } catch (IOException ignored) {} }
         @Override protected void onOpen() {
+            // HTTP requests keep their 15-second timeout. Upgraded connections
+            // are monitored by ping/pong instead: the HTTP deadline races the
+            // next ping and used to delete otherwise healthy host rooms.
+            try { socket.setSoTimeout(0); } catch (IOException e) { terminate(); return; }
             peers.add(this);
-            try { client = hub.connect(raw -> { try { send(raw); } catch (IOException e) { try { close(WebSocketFrame.CloseCode.GoingAway, "Disconnected", false); } catch (IOException ignored) {} } }); }
+            try { client = hub.connect(raw -> { try { send(raw); } catch (IOException e) { terminate(); } }); }
             catch (RuntimeException e) { try { close(WebSocketFrame.CloseCode.PolicyViolation, "Full", false); } catch (IOException ignored) {} }
         }
         @Override protected void onMessage(WebSocketFrame frame) {

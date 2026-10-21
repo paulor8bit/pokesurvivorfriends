@@ -2,10 +2,10 @@
 
 1. No computador do anfitrião, abra **dist/desktop/PokeSurvivor-Online-1.0.0-x64.exe**. É um aplicativo portátil: não precisa instalar Node.js nem abrir terminal.
 2. O jogo abre em sua própria janela e prepara o acesso online automaticamente. A ferramenta de conexão já está incluída no executável. Não pede conta, domínio, cartão ou chave.
-3. Dentro do aplicativo, entre em **Jogar com amigos**, informe um apelido e clique em **Criar sala**.
+3. Dentro do aplicativo, entre em **Jogar**. A sala é preparada automaticamente com seu nome e Pokémon. Em cada uma das três vagas, escolha **Bot** ou **Amigo convidado**; para bots, escolha um Pokémon da sua coleção.
 4. Use **Copiar link** ou **Compartilhar convite** e envie ao amigo pelo WhatsApp.
-5. O amigo abre o link no navegador do computador ou celular, escolhe seu Pokémon na primeira visita, informa o apelido e entra na sala. O convite é preservado durante a escolha inicial.
-6. Quando todos estiverem conectados, o anfitrião inicia a partida. São até quatro jogadores.
+5. O amigo abre o link no navegador, informa o apelido e escolhe entre os iniciais e os Pokémon da coleção do anfitrião. Os emprestados usam atributos base e não são adicionados à coleção do convidado.
+6. O anfitrião pode iniciar sozinho, com bots ou convidados. Os amigos também podem entrar depois do início, ocupando vagas livres ou substituindo bots. Só aparece sala cheia com quatro jogadores humanos. Se alguém sair, o bot configurado para aquela vaga retorna com seu nível da partida. No menu de pausa, **Equipe e convite** abre as vagas e o link novamente.
 
 Os arquivos do aplicativo são preparados somente na primeira abertura de cada versão. Depois disso, o executável usa os mesmos arquivos prontos. Abrir novamente enquanto o jogo está em execução recupera sua janela, sem extrair arquivos por cima dela. Use o executável de `dist/desktop` ou o atalho `PokéSurvivor Online` na pasta principal do projeto.
 
@@ -17,7 +17,9 @@ Depois de uma abertura bem-sucedida em compatibilidade, o iniciador lembra essa 
 
 A janela do jogo confirma diretamente sua inicialização ao iniciador, sem depender de uma consulta de rede a `localhost`.
 
-O código da sala também pode ser digitado em **Jogar com amigos** quando todos acessam o mesmo endereço do túnel. O código sozinho não informa o endereço do computador: envie o link completo na primeira vez.
+O código da sala também pode ser digitado em **Jogar → Entrar por convite** quando todos acessam o mesmo endereço do túnel. O código sozinho não informa o endereço do computador: envie o link completo na primeira vez.
+
+Quem já tem o jogo instalado deve abrir o próprio aplicativo, entrar em **Jogar**, colar o **link completo** do anfitrião e clicar em **Entrar por convite**. Na escolha, use **Minha coleção** para jogar com seus Pokémon, melhorias, variante shiny e movimento inicial salvos. O aplicativo continua no endereço local habitual e mantém o salvamento separado do anfitrião. No lobby, **Escolher Pokémon** permite trocar antes da partida.
 
 ## Enquanto estiverem jogando
 
@@ -44,4 +46,4 @@ Somente os arquivos públicos do jogo são servidos: a pasta Git, scripts do com
 - `npm run test:online`: verifica salas, limites, isolamento, reconexão e encerramento do acesso online.
 - `npm run build:game`: gera o jogo a partir de `dev.html`.
 
-Não é necessário publicar no GitHub nem usar Firebase. O anfitrião usa o aplicativo Windows e os convidados usam o navegador. APK Android não faz parte deste pacote.
+Não é necessário publicar no GitHub nem usar Firebase. O anfitrião pode usar Windows ou Android, e os convidados podem usar o navegador ou o próprio aplicativo. Veja também [Android](ANDROID.md).

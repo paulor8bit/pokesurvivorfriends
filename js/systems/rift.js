@@ -270,6 +270,11 @@ G.Rift = (() => {
 
   return {
     reset, update, drawable, onEvent, enterRequest() { if (!arena) start(); },
+    snapshot() { return { rift: rift && { ...rift }, arena: arena && { ...arena } }; },
+    restore(s) {
+      if (s?.arena) { begin(s.arena); Object.assign(arena, s.arena); }
+      else if (s?.rift) { show(s.rift.x, s.rift.y, s.rift.ttl); }
+    },
     get rift() { return rift; }, get arena() { return arena; },
     get inArena() { return !!arena; },
     get timeLeft() { return arena ? Math.max(0, ARENA_TIME - arena.t) : 0; },

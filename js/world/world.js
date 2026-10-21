@@ -588,6 +588,9 @@ G.World = (() => {
   return {
     TS, CW, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
+    brokenNear(x, y, radius = 1300) {
+      return [...broken].map(k => k.split(',').map(Number)).filter(([tx, ty]) => Math.hypot(tx * TS - x, ty * TS - y) < radius);
+    },
     damageProp, breakAt, specialsNear, update,
     breakProp(p) { if (!broken.has(p.tx + ',' + p.ty)) destroyProp(p); },
     /** Arena de la grieta: { tx, ty, r } (en tiles) o null. */

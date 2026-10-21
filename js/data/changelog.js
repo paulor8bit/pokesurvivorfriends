@@ -6,6 +6,34 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-20', title: ['Todo en Jugar', 'One Play button'], chg: [
+    ['Jugar reúne las partidas a solas y con amigos. Elige bot o amigo invitado para cada uno de los tres huecos. Puedes empezar sin esperar: los invitados entran incluso durante la partida y ocupan huecos libres o sustituyen bots. La sala sólo está llena con cuatro jugadores humanos. Si alguien sale, vuelve el bot de su hueco con el nivel que ya tenía.',
+     'Play brings solo and co-op together. Choose a bot or invited friend for each of the three slots. Start without waiting: friends can join during the game, taking empty slots or replacing bots. The room is full only with four human players. When someone leaves, that slot’s bot returns at its previous run level.']
+  ] },
+  { d: '2026-10-20', title: ['Vida sobre los Pokémon', 'Health above Pokémon'], chg: [
+    ['En las partidas con amigos, el nombre y el HP actual y máximo aparecen sobre cada Pokémon, también sobre el tuyo. La barra cambia de color cuando queda poca vida y sigue visible sobre el escenario.',
+     'In co-op, each Pokémon displays its name and current/maximum HP overhead, including your own. The bar changes color at low health and stays visible above the scenery.']
+  ] },
+  { d: '2026-10-20', title: ['Pokémon de invitados', 'Guest Pokémon'], new: [
+    ['Los invitados eligen entre los iniciales, los Pokémon prestados por el anfitrión o su propia colección. Pega el enlace completo en tu aplicación para conservar tus mejoras y tu ataque inicial, sin cambiar tu guardado ni desbloquear los Pokémon prestados.',
+     'Guests can choose starters, Pokémon borrowed from the host, or their own collection. Paste the full link in your app to keep your upgrades and starting move without changing your save or unlocking borrowed Pokémon.']
+  ] },
+  { d: '2026-10-20', title: ['Compañeros y afinidad', 'Partners and affinity'], chg: [
+    ['Los compañeros exploran cerca del jugador, se separan y rodean obstáculos. Conservan su afinidad entre partidas, pero empiezan cada partida en nivel 1 y aprenden hasta cuatro ataques en los niveles 1, 10, 20 y 30. En Equipo puedes entrenar ataques alternativos con monedas.',
+     'Partners explore near the player, spread out and navigate obstacles. Affinity persists between runs, but every run starts at level 1, learning up to four moves at levels 1, 10, 20 and 30. Train alternative moves with coins in Team.']
+  ] },
+  { d: '2026-10-20', title: ['PokeSuvivor Friends', 'PokeSuvivor Friends'], chg: [
+    ['El juego ahora se llama PokeSuvivor Friends. Al entrar por primera vez eliges directamente tu Pokémon inicial, sin cuestionario. Tu progreso guardado continúa igual.',
+     'The game is now called PokeSuvivor Friends. On your first visit, choose your starter Pokémon directly, without a questionnaire. Existing progress is preserved.']
+  ] },
+  { d: '2026-10-20', title: ['Invitaciones Android', 'Android invitations'], fix: [
+    ['Android: corregida la conexión del invitado mediante el enlace público. El servidor ya no envía una cabecera HTTP que cerraba la conexión de la sala en el túnel. Los errores de conexión ya no piden abrir un iniciador de Windows.',
+     'Android: fixed guests connecting through the public invitation. The server no longer sends an HTTP header that closed the room connection through the tunnel. Connection errors no longer ask guests to open a Windows launcher.']
+  ] },
+  { d: '2026-10-20', title: ['Salas Android', 'Android rooms'], fix: [
+    ['Android: las salas ya no se cierran por un pequeño retraso de conexión al esperar amigos. Compartir el enlace tampoco suspende los mensajes de la sala.',
+     'Android: rooms no longer close because of a short connection delay while waiting for friends. Sharing the invitation no longer suspends room messages.']
+  ] },
   { d: '2026-10-20', title: ['Android', 'Android'], new: [
     ['Aplicación Android: juega sin conexión con controles táctiles y guardado local. El teléfono también puede alojar salas de hasta cuatro jugadores y compartir invitaciones por internet o por la misma red Wi-Fi. Mantén el juego abierto: al cerrarlo, termina la sala.',
      'Android app: play offline with touch controls and local saves. The phone can also host rooms for up to four players and share invitations over the internet or the same Wi-Fi. Keep the game open: closing it ends the room.']

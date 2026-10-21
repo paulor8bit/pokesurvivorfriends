@@ -47,6 +47,7 @@ G.Coop = (() => {
   let levelSeq = 0, levelNow = 1, seenSeq = 0, doneSeq = 0, lastHo = '';
   const STALL_MS = 2500;
   let members = [];
+  let runCfg = null;
 
   // ---------------- escalado de dificultad ----------------
 
@@ -67,21 +68,35 @@ G.Coop = (() => {
     local = pl;
     api = cb;
     members = cfg.members;
+    runCfg = cfg;
     mates.clear();
     outEv = []; flushT = 0; waiting = new Set(); holds = new Set();
     hostAway = false; stalled = false; lastHostAt = performance.now();
     levelSeq = 0; levelNow = 1; seenSeq = 0; doneSeq = 0; lastHo = '';
     cfg.members.forEach((m, i) => {
-      const x = (i - (cfg.members.length - 1) / 2) * 34, y = 0;
-      if (m.uid === me) { pl.x = x; pl.y = y; pl.uid = me; pl.coopHost = host; pl.tagColor = COLORS[i]; return; }
-      const mon = G.DEX_BY[m.dex] || G.DEX_BY[25];
-      const p = new G.Player(mon, {}, !!m.shiny);
-      p.remote = true; p.uid = m.uid; p.tag = m.name; p.tagColor = COLORS[i]; p.revLabel = 'Quédate a su lado';
-      p.x = x; p.y = y;
-      p.net = { x, y, ang: Math.PI / 2, walk: 0, hp: p.maxHp, maxHp: p.maxHp, dead: 0, mv: G.baseStartOf(mon.dex), ml: 1, mag: 78, aim: Math.PI / 2, rev: 0 };
-      G.Sprites.preload([mon.dex], 8000, p.shiny);
-      mates.set(m.uid, { uid: m.uid, name: m.name, color: COLORS[i], pl: p, connected: true, q: [], flushT: 0, xpMul: 1 });
+      const x = ((m.slot ?? i) - 1.5) * 34, y = 0;
+      if (m.uid === me) { pl.x = x; pl.y = y; pl.uid = me; pl.coopHost = host; pl.tag = m.name; pl.tagColor = COLORS[m.slot ?? i]; return; }
+      addMate(m, i, x, y, false);
     });
+    pl.hadFriends = cfg.members.length > 1;
+  }
+  function addMate(m, index, x, y, pending) {
+    const mon = G.DEX_BY[m.dex] || G.DEX_BY[25], color = COLORS[m.slot ?? index];
+    const p = new G.Player(mon, {}, !!m.shiny);
+    p.remote = true; p.uid = m.uid; p.tag = m.name; p.tagColor = color; p.revLabel = 'Quédate a su lado';
+    p.x = x; p.y = y;
+    p.net = { x, y, ang: Math.PI / 2, walk: 0, hp: p.maxHp, maxHp: p.maxHp, dead: 0, mv: G.baseStartOf(mon.dex), ml: 1, mag: 78, aim: Math.PI / 2, rev: 0 };
+    G.Sprites.preload([mon.dex], 8000, p.shiny);
+    mates.set(m.uid, { uid: m.uid, name: m.name, color, pl: p, connected: true, q: [], flushT: 0, xpMul: 1,
+      pending, joinT: 0, known: new Set(), props: new Set(), pickups: new Set() });
+  }
+  function syncRoom(room) {
+    if (!active || room.run?.id !== runCfg?.runId) return;
+    members = room.members;
+    if (members.length > 1) local.hadFriends = true;
+    for (const [uid] of mates) if (!members.some(m => m.uid === uid)) { mateGone(uid); mates.delete(uid); }
+    members.forEach((m, i) => { if (m.uid !== me && !mates.has(m.uid)) addMate(m, i, local.x + ((m.slot || i) - 1) * 40, local.y + 35, host); });
+    if (host) G.Bots.syncSlots(local, room.bots);
   }
 
   function end() {
@@ -179,7 +194,15 @@ G.Coop = (() => {
     }
     const ev = m.q; m.q = [];
     const f = { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10],
-                p, e: enemyList(m.pl), ev };
+                p, e: enemyList(m.pl), ev, bots: G.Bots.snapshot() };
+    f.ne = G.EnemyMgr.all().filter(e => !e.dead && !m.known.has(e.id) && G.U.dist2(e.x, e.y, m.pl.x, m.pl.y) < NEAR * NEAR).slice(0, 120).map(e => {
+      m.known.add(e.id); return [e.id, e.dex, r1(e.x), r1(e.y), e.boss ? 1 : 0, e.shiny ? 1 : 0, Math.ceil(e.maxHp), r2(e.dmg), e.behavior];
+    });
+    f.pk = G.Pickups.all().filter(o => !m.pickups.has(o.id) && G.U.dist2(o.x, o.y, m.pl.x, m.pl.y) < NEAR * NEAR).map(o => {
+      m.pickups.add(o.id); return [o.id, o.kind, r1(o.x), r1(o.y), o.value];
+    });
+    f.bp = G.World.brokenNear(m.pl.x, m.pl.y).filter(p => !m.props.has(p.join(','))).slice(0, 300);
+    for (const p of f.bp) m.props.add(p.join(','));
     const ja = G.Judgment.netState();       // Arceus en la Sentencia
     if (ja) f.ja = ja;
     // Siempre: quién está eligiendo y, si hay cartas de nivel, cuáles (ver arriba).
@@ -202,6 +225,15 @@ G.Coop = (() => {
     if (host) {
       for (const m of mates.values()) {
         if (!m.connected) continue;
+        if (m.pending) {
+          m.joinT -= dt;
+          if (m.joinT <= 0) {
+            const room = G.Social.room;
+            if (!room?.run) continue;
+            m.known.clear(); m.props.clear(); m.pickups.clear(); m.joinT = 1;
+            G.Net.send(m.uid, { k: 'start', seed: runCfg.seed, runId: runCfg.runId, host: hostUid, members: room.members, bots: room.bots, snapshot: api.snapshot() });
+          }
+        }
         m.flushT -= dt;
         if (m.flushT > 0) continue;
         m.flushT = rateFor(m.uid);
@@ -253,6 +285,7 @@ G.Coop = (() => {
     const m = mates.get(from);
     if (!m || !m.connected) return;
     if (msg.p) { m.state = msg.p; m.pl.net = readState(msg.p); m.xpMul = m.pl.net.xpMul || 1; reconcile(from, m.pl.net); }
+    m.pending = false;
     for (const ev of msg.ev || []) {
       switch (ev[0]) {
         case 'h': {
@@ -313,6 +346,10 @@ G.Coop = (() => {
   function onHostFrame(msg) {
     lastHostAt = performance.now();
     if (stalled) { stalled = false; updateAway(); }
+    G.Bots.receiveFrame(msg.bots || []);
+    for (const a of msg.ne || []) applyHostEvent(['ne', ...a]);
+    for (const a of msg.pk || []) G.Pickups.addRemote(...a);
+    for (const a of msg.bp || []) G.World.breakAt(...a);
     for (const ev of msg.ev || []) applyHostEvent(ev);
     if (msg.ja) G.Judgment.netApply(msg.ja);
     // Quién elige y las cartas de nivel, aunque se haya perdido algún aviso.
@@ -357,6 +394,7 @@ G.Coop = (() => {
                               friendly: false, color: '#ff7a9e', vis: G.VFX.forType(ev[8]), mtype: ev[8], cat: ev[9] });
         break;
       case 'c': { const m = mates.get(ev[1]); if (m) G.Combat.ghostCast(m.pl, ev[2], ev[3], ev[4], ev[5]); break; }
+      case 'bc': { const b = G.Bots.list().find(b => b.slot === ev[1]); if (b) G.Combat.ghostCast(b, ev[2], ev[3], ev[4], ev[5]); break; }
       case 'item': api.item(ev[1]); break;
       case 'pk': G.Pickups.addRemote(ev[1], ev[2], ev[3], ev[4], ev[5]); break;
       case 'pc': G.Pickups.removeId(ev[1]); break;
@@ -389,6 +427,7 @@ G.Coop = (() => {
 
   /** Tu ataque: los demás lo repiten como fantasma. */
   function cast(pl, m) {
+    if (active && host && pl.bot) { emit(['bc', pl.slot, m.id, m.lvl, r2(pl.aim), m.evolved ? 1 : 0]); return; }
     if (!active || pl !== local) return;
     if (host) emit(['c', me, m.id, m.lvl, r2(pl.aim), m.evolved ? 1 : 0]);
     else outEv.push(['c', m.id, m.lvl, r2(pl.aim), m.evolved ? 1 : 0]);
@@ -494,7 +533,7 @@ G.Coop = (() => {
   }
 
   return {
-    ANIMS, COLORS, begin, end, leave, tick, players, puppets, xpFactor, scaleRate, scaleHp,
+    ANIMS, COLORS, begin, end, leave, tick, players, puppets, syncRoom, xpFactor, scaleRate, scaleHp,
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
     propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */

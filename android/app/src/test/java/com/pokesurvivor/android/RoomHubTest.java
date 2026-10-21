@@ -47,4 +47,33 @@ public class RoomHubTest {
         String id = host.rpc("create", "member", mon()).getJSONObject("room").getString("id");
         hub.close(); assertFalse(new Player().rpc("join", "member", mon(), "code", id).getBoolean("ok"));
     }
+    @Test public void sharedCollectionAndBorrowing() throws Exception {
+        Player host = new Player(), guest = new Player();
+        JSONArray catalog = new JSONArray().put(RoomHub.json("dex", 150, "shiny", true, "coins", 900));
+        JSONObject created = host.rpc("create", "member", mon(), "catalog", catalog).getJSONObject("room");
+        String id = created.getString("id");
+        assertFalse(created.getJSONArray("catalog").getJSONObject(0).has("coins"));
+        assertTrue(guest.rpc("catalog", "code", id).getBoolean("ok"));
+        assertFalse(guest.rpc("join", "code", id, "member", RoomHub.json("name", "Guest", "dex", 151, "source", "host")).getBoolean("ok"));
+        assertTrue(guest.rpc("join", "code", id, "member", RoomHub.json("name", "Guest", "dex", 150, "source", "host", "shiny", true)).getBoolean("ok"));
+        host.rpc("open", "open", false);
+        assertFalse(guest.rpc("member", "member", mon()).getBoolean("ok"));
+    }
+    @Test public void livePlayersReplaceBotsAndOnlyFourHumansFillRoom() throws Exception {
+        Player host = new Player();
+        JSONArray catalog = new JSONArray(), slots = new JSONArray();
+        for (int dex : new int[]{1,4,7}) { catalog.put(RoomHub.json("dex", dex)); slots.put(RoomHub.json("kind", "bot", "dex", dex)); }
+        JSONObject room = host.rpc("create", "member", mon(), "catalog", catalog, "slots", slots).getJSONObject("room");
+        String id = room.getString("id"); assertEquals(3, room.getJSONArray("bots").length());
+        assertTrue(host.rpc("start", "seed", 123).getBoolean("ok"));
+        Player[] guests = {new Player(), new Player(), new Player(), new Player()};
+        for (int i = 0; i < 3; i++) {
+            JSONObject joined = guests[i].rpc("join", "code", id, "member", mon()); assertTrue(joined.getBoolean("ok"));
+            assertEquals(2 - i, joined.getJSONObject("room").getJSONArray("bots").length());
+        }
+        assertFalse(guests[3].rpc("join", "code", id, "member", mon()).getBoolean("ok"));
+        guests[1].rpc("leave");
+        assertTrue(guests[3].rpc("join", "code", id, "member", mon()).getBoolean("ok"));
+        assertTrue(host.rpc("finish").getBoolean("ok"));
+    }
 }

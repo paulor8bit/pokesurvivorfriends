@@ -706,6 +706,15 @@ G.Judgment = (() => {
 
   return {
     AT, reset, noteDmg, update, cineTick, skip, bossDown, drawable, drawAir, drawOverlay, onEvent, netState, netApply,
+    snapshot() { return phase ? { cfg, phase, ct, ported, landed, arenaT, bossT, bossN, base, downs, pos: netState() } : null; },
+    restore(s) {
+      if (!s) return;
+      begin(s.cfg);
+      if (s.ported) port();
+      if (s.landed) land(true);
+      phase = s.phase; ct = s.ct; arenaT = s.arenaT; bossT = s.bossT; bossN = s.bossN; base = s.base; downs = s.downs;
+      if (s.pos) netApply(s.pos);
+    },
     get active() { return !!phase; }, capSpd,
     get cinematic() { return phase === 'cine'; },
     /** Lo que suena: nada en la animación hasta que aterriza. */

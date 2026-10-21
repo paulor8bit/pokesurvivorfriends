@@ -8,8 +8,8 @@ async function setup(t) {
   const game = createGameServer(); game.server.listen(0, '127.0.0.1'); await once(game.server, 'listening');
   const base = `http://127.0.0.1:${game.server.address().port}`;
   t.after(() => game.close());
-  return { game, base, async client() {
-    const ws = new WebSocket(base.replace('http', 'ws') + '/rooms');
+  return { game, base, async client(options) {
+    const ws = new WebSocket(base.replace('http', 'ws') + '/rooms', options);
     const queue = [], waiters = [];
     ws.on('message', raw => {
       const m = JSON.parse(raw.toString());
@@ -90,4 +90,64 @@ test('validates names and Pokémon and rejects cross-origin browser sockets', as
   assert.equal((await a.rpc('create', { member: { name: 'Guest', dex: -1 } })).ok, false);
   const bad = new WebSocket(s.base.replace('http', 'ws') + '/rooms', { origin: 'https://unrelated.example' });
   const [err] = await once(bad, 'error'); assert.ok(err);
+});
+
+test('room choices share only the host collection and reject unavailable borrowed Pokémon', async t => {
+  const s = await setup(t), host = await s.client(), guest = await s.client();
+  const { room } = await host.rpc('create', { member: mon('Host'), catalog: [{ dex: 150, shiny: true, coins: 999, upgrades: { hp: 10 } }, { dex: -1 }, { dex: 150, shiny: true }] });
+  assert.deepEqual(room.catalog, [{ dex: 150, shiny: true }]);
+  const listed = await guest.rpc('catalog', { code: room.id });
+  assert.deepEqual(listed.catalog, room.catalog);
+  assert.equal((await guest.rpc('join', { code: room.id, member: { name: 'Guest', dex: 151, source: 'host' } })).ok, false);
+  const joined = await guest.rpc('join', { code: room.id, member: { name: 'Guest', dex: 150, shiny: true, source: 'host' } });
+  assert.equal(joined.ok, true); assert.equal(joined.room.members[1].source, 'host');
+  assert.equal((await host.rpc('member', { member: mon('Host') })).ok, true);
+  assert.deepEqual((await guest.rpc('catalog', { code: room.id })).catalog, room.catalog);
+  assert.equal((await guest.rpc('member', { member: { name: 'Guest', dex: 4, source: 'starter', shiny: true } })).ok, true);
+  const updated = await host.next(m => m.k === 'room' && m.room.members.some(m => m.source === 'starter'));
+  assert.equal(updated.room.members.find(m => m.uid === guest.uid).shiny, false);
+  await host.rpc('open', { open: false });
+  assert.equal((await guest.rpc('member', { member: mon('Guest') })).ok, false);
+});
+
+test('an installed app connects from its own local origin to a friend’s host', async t => {
+  const s = await setup(t), host = await s.client(), app = await s.client({ origin: 'http://localhost:8790' });
+  const { room } = await host.rpc('create', { member: mon('Host') });
+  const joined = await app.rpc('join', { code: room.id, member: { name: 'Meu save', dex: 133, source: 'local' } });
+  assert.equal(joined.ok, true); assert.equal(joined.room.members[1].dex, 133);
+});
+
+test('one run mixes bots and humans; live guests replace bots until there are four humans', async t => {
+  const s = await setup(t), host = await s.client();
+  const catalog = [1, 4, 7].map(dex => ({ dex }));
+  const slots = catalog.map(m => ({ kind: 'bot', dex: m.dex }));
+  const { room } = await host.rpc('create', { member: mon('Host'), catalog, slots });
+  assert.equal(room.members.length, 1); assert.equal(room.bots.length, 3);
+  const started = await host.rpc('start', { seed: 12345 });
+  assert.equal(started.ok, true); assert.equal(started.room.open, true);
+  const clients = await Promise.all(Array.from({ length: 4 }, () => s.client()));
+  for (let i = 0; i < 3; i++) {
+    const r = await clients[i].rpc('join', { code: room.id, member: mon('Guest ' + i) });
+    assert.equal(r.ok, true); assert.equal(r.room.members.length, i + 2); assert.equal(r.room.bots.length, 2 - i);
+    assert.equal(r.room.members.find(m => m.uid === clients[i].uid).slot, i + 1);
+    assert.equal(r.room.run.id, started.room.run.id);
+  }
+  assert.match((await clients[3].rpc('join', { code: room.id, member: mon('Fifth') })).error, /llena/);
+  assert.equal((await clients[0].rpc('slots', { slots })).ok, false);
+  await clients[1].rpc('leave');
+  const restored = await host.next(m => m.k === 'room' && m.room.members.length === 3 && m.room.bots.some(b => b.slot === 2));
+  assert.equal(restored.room.bots[0].slot, 2);
+  assert.equal((await clients[3].rpc('join', { code: room.id, member: mon('Fifth') })).room.members.find(m => m.uid === clients[3].uid).slot, 2);
+  assert.equal((await host.rpc('finish')).ok, true);
+});
+
+test('an invited friend uses a reserved free slot before replacing a bot', async t => {
+  const s = await setup(t), host = await s.client(), a = await s.client(), b = await s.client();
+  const { room } = await host.rpc('create', { member: mon('Host'), catalog: [{ dex: 1 }, { dex: 7 }],
+    slots: [{ kind: 'bot', dex: 1 }, { kind: 'friend' }, { kind: 'bot', dex: 7 }] });
+  const first = await a.rpc('join', { code: room.id, member: mon('First') });
+  assert.equal(first.room.members.find(m => m.uid === a.uid).slot, 2); assert.equal(first.room.bots.length, 2);
+  const next = await b.rpc('join', { code: room.id, member: mon('Second') });
+  assert.equal(next.room.members.find(m => m.uid === b.uid).slot, 1); assert.equal(next.room.bots.length, 1);
+  assert.equal((await host.rpc('slots', { slots: [{ kind: 'bot', dex: 999 }] })).ok, false);
 });

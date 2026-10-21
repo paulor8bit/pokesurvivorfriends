@@ -216,6 +216,25 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 .cell .partner { position: absolute; top: 3px; right: 5px; font-size: 12px; }
 
 .wide { width: min(980px, 100%); }
+
+/* Treino dos parceiros: nível de afinidade e quatro ataques por partida. */
+#scr-bots { padding-top: 66px; }
+.bot-affinity { color: var(--gold); font-size: 13px; margin-top: 4px; }
+.bot-training-card { margin: -3px 0 18px; padding: 0 12px 10px; }
+.bot-affinity-track { height: 5px; background: #0b1838; border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
+.bot-affinity-track i { display: block; height: 100%; background: #7ee07a; }
+.bot-attack-slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.bot-attack-slot { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; text-align: left; padding: 9px !important; min-width: 0; white-space: normal; }
+.bot-attack-slot span { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.bot-attack-slot small { font-size: 11px; color: var(--muted); }
+.bot-attack-slot:disabled { opacity: .65; }
+#bot-training { border-top: 1px solid var(--edge-in); padding-top: 14px; }
+.bot-move-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.bot-move-option { display: flex; flex-direction: column; text-align: left; gap: 4px; white-space: normal; }
+.bot-move-option span { display: flex; align-items: center; gap: 6px; }
+.bot-move-option small { color: var(--muted); font-size: 12px; }
+@media (max-width: 760px) { .bot-attack-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-height: 520px) { #scr-bots { padding-top: 38px; } }
 .split { display: grid; grid-template-columns: 1fr 300px; gap: 18px; }
 .panel {
   background: rgba(0,0,0,.2); border: 2px solid rgba(244,248,255,.2); border-radius: 10px; padding: 14px;
@@ -533,8 +552,9 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 .lob-card {
   display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px;
   border-radius: 10px; background: rgba(0,0,0,.25); border: 3px solid var(--pc, rgba(244,248,255,.2));
-  min-height: 170px; justify-content: center; text-align: center;
+  min-width: 0; min-height: 170px; justify-content: center; text-align: center;
 }
+.lob-card .field { width: 100%; min-width: 0; font-size: 12px; }
 .lob-card b { font-size: 17px; color: var(--pc); }
 .lob-card small { color: var(--muted); font-size: 12px; }
 .lob-card .conn { font-size: 12px; color: var(--green); }
@@ -741,7 +761,7 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 @media (max-height: 520px) {
   .scr { padding: 50px 10px 6px; }
   /* Sin barra superior encima: no hace falta dejarle hueco. */
-  #scr-login, #scr-test, #scr-result, #scr-starters, #scr-nick, #scr-levelup, #scr-pause,
+  #scr-login, #scr-starters, #scr-nick, #scr-levelup, #scr-pause,
   #scr-over, #scr-item, #scr-settings, #scr-legal, #scr-profile { padding: 6px 10px; }
   .split { grid-template-columns: 1fr; }
   .logo .t1 { font-size: 30px; }

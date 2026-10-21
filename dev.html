@@ -7,7 +7,7 @@
 <meta http-equiv="Content-Security-Policy" content="script-src 'self' file:; object-src 'none'; base-uri 'self'">
 <meta name="robots" content="noindex">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>PokéSurvivor Online · Fork</title>
+<title>PokeSuvivor Friends</title>
 <meta name="description" content="Jogue solo ou em salas com amigos, sem conta. Aplicativo Windows com convidados pelo navegador.">
 
 <link rel="manifest" href="manifest.webmanifest">
@@ -20,7 +20,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="PokéSurvivor">
+<meta name="apple-mobile-web-app-title" content="PokeSuvivor Friends">
 <link rel="preload" href="assets/fonts/PixelifyPS-400.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/PixelifyPS-700.ttf" as="font" type="font/ttf" crossorigin>
 
@@ -30,32 +30,7 @@
 
 <canvas id="game"></canvas>
 <!-- En móvil se juega en horizontal -->
-<div id="rotate" class="hidden"><div class="box center"><div id="rotate-ico"></div><h2>Gira el móvil</h2><p class="sub">PokéSurvivor se juega en horizontal.</p></div></div>
-
-<!-- ====== Test de personalidad ====== -->
-<section id="scr-test" class="scr dim hidden">
-  <div class="box test-box">
-    <div class="progress"><i id="test-bar"></i></div>
-    <p class="sub" id="test-count"></p>
-    <p class="q" id="test-q"></p>
-    <div class="answers" id="test-a"></div>
-  </div>
-</section>
-
-<!-- ====== Resultado del test ====== -->
-<section id="scr-result" class="scr dim hidden">
-  <div class="box result">
-    <p class="sub">Tu personalidad es…</p>
-    <div class="trait" id="res-trait"></div>
-    <p id="res-text"></p>
-    <canvas id="res-stage" class="stage" width="200" height="150"></canvas>
-    <h3>Tu compañero: <span class="gold" id="res-name"></span></h3>
-    <div class="row" style="justify-content:center;margin-top:14px">
-      <button id="res-ok" class="btn gold">¡Vamos juntos!</button>
-      <button id="res-other" class="btn">Elegir otro</button>
-    </div>
-  </div>
-</section>
+<div id="rotate" class="hidden"><div class="box center"><div id="rotate-ico"></div><h2>Gira el móvil</h2><p class="sub">PokeSuvivor Friends se juega en horizontal.</p></div></div>
 
 <!-- ====== Elegir compañero ====== -->
 <section id="scr-starters" class="scr dim hidden">
@@ -64,7 +39,6 @@
     <p class="sub">Los iniciales de todas las regiones, y dos amigos más.</p>
     <div class="grid" id="starter-grid"></div>
     <div class="row between" style="margin-top:14px">
-      <button id="starter-back" class="btn ghost">Volver</button>
       <span id="starter-info" class="grow" style="color:var(--muted)"></span>
       <button id="starter-ok" class="btn gold" disabled>Elegir</button>
     </div>
@@ -75,7 +49,7 @@
 <section id="scr-menu" class="scr hidden">
   <div class="menu-left">
     <div class="logo">
-      <div class="t1">PokéSurvivor</div>
+      <div class="t1">PokeSuvivor Friends</div>
       <div class="t2">Mundo Misterioso</div>
     </div>
     <div class="partner-card">
@@ -88,13 +62,12 @@
   <div class="menu-right">
     <div class="box">
       <div class="menu-list">
-        <button class="menu-item play" data-go="play">Jugar<small>Entra en la mazmorra</small></button>
+        <button class="menu-item play" data-go="play">Jugar<small>Configura tu equipo e invita amigos</small></button>
         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
         <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
         <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
         <button class="menu-item" data-go="bots">Equipo<small id="menu-bots-sub">Recluta Pokémon que luchen contigo</small></button>
-        <button class="menu-item" data-go="friends">Jugar con amigos<small id="menu-friends-sub">Sin cuenta · enlace o código · hasta 4</small></button>
         <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
       </div>
     </div>
@@ -153,13 +126,13 @@
     <p><a href="CREDITS.md" target="_blank">Créditos completos</a> · <a href="LICENSE" target="_blank">Licenças e avisos originais</a></p>
     <h3>Dados e salas</h3>
     <p>Não pedimos conta, e-mail, senha ou telefone. O progresso fica nos dados locais do aplicativo ou do navegador. Cada endereço temporário tem seu próprio salvamento no navegador.</p>
-    <p>O apelido e o Pokémon são compartilhados com os participantes da sala. As salas ficam na memória do computador do anfitrião e encerram ao fechar o jogo. O túnel fornece acesso temporário à sessão.</p>
+    <p>O apelido e o Pokémon escolhido são compartilhados com os participantes da sala. A coleção do anfitrião fica disponível pelo convite para os amigos escolherem Pokémon emprestados. O empréstimo não transfere o salvamento. As salas ficam na memória do aparelho do anfitrião e encerram ao fechar o jogo.</p>
     <p>As partidas podem usar conexão direta entre os participantes. Quando ela não está disponível, o anfitrião retransmite os dados da partida.</p>
   </div>
 </section>
 <div id="boot" class="boot">
   <div class="boot-in">
-    <h1>PokéSurvivor</h1>
+    <h1>PokeSuvivor Friends</h1>
     <p>Juego de supervivencia con Pokémon, gratis en el navegador y en el móvil.</p>
     <p class="boot-ld">Cargando…</p>
   </div>
@@ -167,7 +140,7 @@
 <script src="js/boot.js"></script>
 <div id="tap-start" class="tapstart hidden">
   <div class="boot-in">
-    <h1>PokéSurvivor</h1>
+    <h1>PokeSuvivor Friends</h1>
     <p>Sobrevive a las hordas con tu compañero Pokémon</p>
     <p class="tap-blink">Pulsa para empezar</p>
   </div>
@@ -175,8 +148,8 @@
 <noscript>
   <div class="boot noscript">
     <div class="boot-in">
-      <h1>PokéSurvivor</h1>
-      <p>PokéSurvivor necesita JavaScript para funcionar. Actívalo para jugar.</p>
+      <h1>PokeSuvivor Friends</h1>
+      <p>PokeSuvivor Friends necesita JavaScript para funcionar. Actívalo para jugar.</p>
       <p>Fan game gratuito de supervivencia con 966 Pokémon de las 9 regiones: elige tu compañero, sobrevive a las hordas, evoluciona tus ataques, enfréntate a legendarios y juega en cooperativo con hasta 4 amigos.</p>
     </div>
   </div>
@@ -185,17 +158,26 @@
 <!-- ====== Amigos ====== -->
 <section id="scr-friends" class="scr dim hidden">
   <div class="box wide">
-    <div class="row between"><h2>Jugar con amigos</h2><button class="btn small ghost" data-back>Volver</button></div>
+    <div class="row between"><h2>Jugar</h2><button class="btn small ghost" data-back>Volver</button></div>
     <p class="sub">Sin cuenta, sin contraseña. Sólo tu apodo y el enlace de la sala.</p>
     <form id="room-form" autocomplete="off">
       <label for="room-name">Tu apodo</label>
       <input id="room-name" class="field" maxlength="20" spellcheck="false" placeholder="Cómo te verán tus amigos" required style="width:100%;margin:8px 0 14px">
-      <button id="room-create" class="btn gold" type="button">Crear sala</button>
+      <button id="room-create" class="btn gold hidden" type="button">Jugar</button>
       <p class="sub" style="margin-top:20px">¿Tienes una invitación?</p>
       <label for="room-code">Código o enlace de la sala</label>
       <input id="room-code" class="field" maxlength="300" spellcheck="false" placeholder="ABCD-1234-EF56" style="width:100%;margin:8px 0">
       <button id="room-join" class="btn" type="submit">Entrar en la sala</button>
+      <p class="note">¿Juegas en tu aplicación instalada? Pega el enlace completo aquí para usar tu colección y tus mejoras.</p>
     </form>
+    <div id="room-pokemon" class="hidden" translate="no">
+      <h3 id="room-pokemon-title"></h3>
+      <div class="row"><button class="btn small" id="room-pokemon-host" type="button"></button><button class="btn small" id="room-pokemon-local" type="button"></button></div>
+      <p class="note" id="room-pokemon-note"></p>
+      <div class="grid" id="room-pokemon-grid"></div>
+      <p class="note" id="room-pokemon-stats"></p>
+      <div class="row"><button class="btn ghost" id="room-pokemon-back" type="button"></button><button class="btn gold" id="room-pokemon-ok" type="button" disabled></button></div>
+    </div>
     <p id="room-msg" class="note" role="status" aria-live="polite"></p>
   </div>
 </section>
@@ -205,7 +187,8 @@
   <div class="box wide">
     <div class="row between"><h2>Equipo</h2><button class="btn small ghost" data-back>Volver</button></div>
     <p class="sub">Recluta a tus Pokémon para que luchen a tu lado. Los huecos se desbloquean con monedas.</p>
-    <div id="bots-body"></div>
+    <p class="sub">La afinidad conserva la experiencia de todas las partidas. En cada partida empiezan en nivel 1 y activan sus ataques en los niveles 1, 10, 20 y 30.</p>
+    <div id="bots-body" translate="no"></div>
   </div>
 </section>
 
@@ -213,7 +196,7 @@
 <section id="scr-lobby" class="scr dim hidden">
   <div class="box wide">
     <div class="row between"><h2 id="lobby-title" translate="no">Sala</h2>
-      <div class="row"><button id="lobby-menu" class="btn small ghost">Menú</button><button id="lobby-leave" class="btn small ghost">Salir de la sala</button></div></div>
+      <div class="row"><button id="lobby-choose" class="btn small">Elegir Pokémon</button><button id="lobby-menu" class="btn small ghost">Menú</button><button id="lobby-leave" class="btn small ghost">Salir de la sala</button></div></div>
     <p class="sub" id="lobby-sub"></p>
     <div id="lobby-invitation">
     <label for="lobby-code">Código de la sala</label>
@@ -224,6 +207,10 @@
     <p id="lobby-link-note" class="note"></p>
     </div>
     <div id="lobby-members" class="lobby-members"></div>
+    <form id="lobby-join-form" class="row" style="margin-top:12px">
+      <input id="lobby-join-link" class="field grow" maxlength="300" placeholder="Pega el enlace de un amigo" aria-label="Pega el enlace de un amigo">
+      <button class="btn" type="submit">Entrar por invitación</button>
+    </form>
     <div class="row" style="margin-top:14px">
       <button id="lobby-start" class="btn gold grow">Empezar partida</button>
     </div>
@@ -372,6 +359,7 @@
     <p id="pause-coop" class="note hidden">Partida en grupo: el juego sigue mientras estás aquí.</p>
     <div class="row" style="justify-content:center">
       <button id="btn-resume" class="btn gold">Continuar</button>
+      <button id="btn-room" class="btn">Equipo e invitación</button>
       <button id="btn-pause-settings" class="btn">Ajustes</button>
       <button id="btn-quit" class="btn">Abandonar run</button>
     </div>
@@ -452,7 +440,7 @@
 <script defer src="js/ui/ui.js"></script>
 <script defer src="js/ui/hud.js"></script>
 <script defer src="js/ui/bots-ui.js"></script>
-<script defer src="js/ui/test.js"></script>
+<script defer src="js/ui/starters-ui.js"></script>
 <script defer src="js/ui/menu.js"></script>
 <script defer src="js/ui/slots.js"></script>
 <script defer src="js/ui/gacha-ui.js"></script>

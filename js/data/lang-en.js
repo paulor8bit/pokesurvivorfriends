@@ -4,6 +4,25 @@
  * son los oficiales en inglés.
  */
 G.I18n.add({
+  'Todo en Jugar': 'One Play button',
+  'Elige tu Pokémon para esta sala': 'Choose your Pokémon for this room', 'Colección del anfitrión': 'Host collection',
+  'Mi colección': 'My collection', 'Elegir y entrar': 'Choose and join', 'Colección propia': 'Own collection', 'Prestado': 'Borrowed',
+  'Iniciales y Pokémon del anfitrión. Los prestados usan atributos base y no se añaden a tu colección.': 'Starters and the host’s Pokémon. Borrowed Pokémon use base stats and are not added to your collection.',
+  'Tus Pokémon usan las mejoras, la variante shiny y el ataque inicial guardados en este dispositivo. Los iniciales nuevos usan atributos base.': 'Your Pokémon use the upgrades, shiny variant and starting move saved on this device. New starters use base stats.',
+  '¿Juegas en tu aplicación instalada? Pega el enlace completo aquí para usar tu colección y tus mejoras.': 'Playing in your installed app? Paste the full invitation link here to use your collection and upgrades.',
+  'Ese Pokémon no está disponible en esta sala.': 'That Pokémon is not available in this room.',
+  'Ese Pokémon no está en tu colección.': 'That Pokémon is not in your collection.',
+  'Sal de tu sala antes de entrar en otra.': 'Leave your room before joining another.', 'Enlace de sala inválido.': 'Invalid room link.',
+  'Afinidad': 'Affinity', 'Nuevo ataque': 'New move', 'en la partida': 'in the run',
+  'Entrena la afinidad para configurar': 'Train affinity to configure', 'Aprendido · cambiar': 'Learned · change',
+  'Aprende al subir de nivel': 'Learned on level-up', 'Entrenar ataques': 'Train moves',
+  'Los ataques aprendidos se equipan gratis. Cada ataque nuevo cuesta': 'Learned moves are free to equip. Each new move costs',
+  'Equipar gratis': 'Equip for free', 'Comprar y equipar': 'Buy and equip', 'Ya equipado': 'Already equipped',
+  'Necesitas más afinidad.': 'You need more affinity.', 'Movimiento no disponible.': 'Move unavailable.',
+  'Ese ataque ya está equipado.': 'That move is already equipped.',
+  'La afinidad conserva la experiencia de todas las partidas. En cada partida empiezan en nivel 1 y activan sus ataques en los niveles 1, 10, 20 y 30.': 'Affinity retains experience from all runs. Partners start each run at level 1 and activate moves at levels 1, 10, 20 and 30.',
+  'PokeSuvivor Friends se juega en horizontal.': 'Play PokeSuvivor Friends in landscape mode.',
+  'PokeSuvivor Friends necesita JavaScript para funcionar. Actívalo para jugar.': 'PokeSuvivor Friends needs JavaScript to run. Enable it to play.',
   // ---------------- tipos y regiones ----------------
   'Acero': 'Steel', 'Agua': 'Water', 'Bicho': 'Bug', 'Dragón': 'Dragon', 'Eléctrico': 'Electric', 'Fantasma': 'Ghost',
   'Fuego': 'Fire', 'Hada': 'Fairy', 'Hielo': 'Ice', 'Lucha': 'Fighting', 'Planta': 'Grass', 'Psíquico': 'Psychic',

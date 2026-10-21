@@ -79,6 +79,14 @@ public abstract class NanoWSD extends NanoHTTPD {
         private final NanoHTTPD.Response handshakeResponse = new NanoHTTPD.Response(NanoHTTPD.Response.Status.SWITCH_PROTOCOL, null, (InputStream) null, 0) {
 
             @Override
+            protected long sendContentLengthHeaderIfNotAlreadyPresent(java.io.PrintWriter writer, long defaultSize) {
+                // A 101 response switches protocols; it has no HTTP body.
+                // Content-Length: 0 makes reverse proxies terminate the upgraded
+                // stream before forwarding the first WebSocket message.
+                return 0;
+            }
+
+            @Override
             protected void send(OutputStream out) {
                 WebSocket.this.out = out;
                 WebSocket.this.state = State.CONNECTING;

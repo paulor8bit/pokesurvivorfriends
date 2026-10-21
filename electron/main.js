@@ -17,6 +17,8 @@ function notifyLauncher() {
 const launcherUrl = pathToFileURL(path.join(__dirname, 'launcher.html')).href;
 const testMode = process.env.POKESURVIVOR_TEST === '1';
 if (process.env.POKESURVIVOR_USER_DATA) app.setPath('userData', process.env.POKESURVIVOR_USER_DATA);
+// Keep the existing development/installed save path when the display name changes.
+else app.setPath('userData', path.join(app.getPath('appData'), 'PokéSurvivor'));
 if (testMode && process.env.POKESURVIVOR_TEST_PROFILE) app.setPath('userData', process.env.POKESURVIVOR_TEST_PROFILE);
 
 if (!app.requestSingleInstanceLock()) app.quit();
@@ -36,7 +38,7 @@ else {
       catch { return false; }
     });
     win = new BrowserWindow({ width: 1280, height: 850, minWidth: 860, minHeight: 600,
-      title: 'PokéSurvivor', backgroundColor: '#081328', show: false,
+      title: 'PokeSuvivor Friends', backgroundColor: '#081328', show: false,
       icon: path.join(app.getAppPath(), 'assets/icons/icon-512.png'),
       webPreferences: { preload: path.join(__dirname, 'preload.js'), partition: 'persist:pokesurvivor',
         contextIsolation: true, nodeIntegration: false, sandbox: true, webSecurity: true, webviewTag: false,
@@ -73,7 +75,7 @@ else {
     await online.start();
     notifyLauncher();
   }).catch(error => {
-    require('electron').dialog.showErrorBox('Não foi possível abrir o PokéSurvivor', error.message);
+    require('electron').dialog.showErrorBox('Não foi possível abrir o PokeSuvivor Friends', error.message);
     app.quit();
   });
   app.on('window-all-closed', () => app.quit());
