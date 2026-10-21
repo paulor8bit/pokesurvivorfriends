@@ -22,8 +22,10 @@
     "test:guests": "node tests/guest-collection-browser.cjs",
     "test:play": "node tests/unified-play-browser.cjs",
     "test:arena": "node tests/arena-browser.cjs",
+    "test:survivor": "node tests/survivor-actions-browser.cjs",
+    "test:rogue": "node tests/rogue-browser.cjs",
     "test:android": "node --test tests/android-rooms.cjs",
-    "test": "node --test tests/rooms.test.js tests/online-session.test.js tests/storage.test.js tests/bots.test.js tests/arena.test.js",
+    "test": "node --test tests/rooms.test.js tests/online-session.test.js tests/storage.test.js tests/bots.test.js tests/arena.test.js tests/survivor-actions.test.js tests/rogue.test.js",
     "build:android": "npm run build:game && node tools/prepare-android.js && powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-android.ps1"
   },
   "build": {

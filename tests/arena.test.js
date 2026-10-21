@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { Tournament } = require('../js/systems/arena');
+const { Tournament, dashFor, ENCOUNTERS } = require('../js/systems/arena');
 const vm = require('node:vm'), fs = require('node:fs'), path = require('node:path');
 async function powers(data = new Map(), blocked = false) {
   const G = { DEX_BY: { 25: { dex: 25, types: ['electric'] }, 4: { dex: 4, types: ['fire'] } }, STARTERS: [{ dex: 25 }, { dex: 4 }] };
@@ -39,7 +39,7 @@ test('Arena powers: equipped move attributes determine authoritative damage and 
   assert.equal(f.cooldowns[0], 0.94); assert.equal(e.state.shots[0].damage, 23); assert.equal(e.state.shots[0].type, 'fire');
 });
 function tournament() {
-  const teams = Array.from({ length: 8 }, (_, t) => ({ name: 'Dupla ' + t, fighters: [0, 1].map(slot => ({ dex: 25, name: 'Pikachu', types: ['electric'], human: t === 0,
+  const teams = Array.from({ length: 8 }, (_, t) => ({ name: 'Dupla ' + t, fighters: Array.from({ length: t < 5 ? 2 : 1 }, (_, slot) => ({ dex: 25, name: 'Pikachu', types: ['electric'], human: t === 0,
     moves: Array.from({ length: 4 }, () => ({ type: 'electric', name: 'Choque' })) })) }));
   return new Tournament(teams, 123);
 }
@@ -56,12 +56,53 @@ test('Arena: humans never auto-cast; inputs are bounded and manual attacks have 
   e.input(f.id, { x: 1000, y: 0 }); const before = f.x; e.step(0.05); assert.ok(f.x - before <= 9.25);
   for (let i = 0; i < 10; i++) e.step(0.05); const stopped = f.x; e.step(0.05); assert.equal(f.x, stopped);
 });
-test('Arena: apples heal 25% without reviving, over-healing or consuming at full HP', () => {
+test('Arena: apples heal 25%, store at most one and only consume at full HP when inventory is empty', () => {
   const e = tournament(); e.begin(); const f = e.state.fighters[0];
+  assert.equal(f.apples, 0);
+  e.state.apples.push({ x: f.x, y: f.y, life: 10 }); e.step(0.01); assert.equal(e.state.apples.length, 0); assert.equal(f.apples, 1); assert.equal(f.hp, 200);
   e.state.apples.push({ x: f.x, y: f.y, life: 10 }); e.step(0.01); assert.equal(e.state.apples.length, 1);
   f.hp = 20; e.step(0.01); assert.equal(f.hp, 70); assert.equal(e.state.apples.length, 0);
   f.hp = 190; e.state.apples.push({ x: f.x, y: f.y, life: 10 }); e.step(0.01); assert.equal(f.hp, 200);
   f.hp = 0; e.state.apples.push({ x: f.x, y: f.y, life: 10 }); e.step(0.01); assert.equal(f.hp, 0);
+});
+test('Arena: faster Pokémon dash farther and faster, recharge sooner, respect bounds and cannot spam dash', () => {
+  assert.ok(dashFor(150).distance > dashFor(80).distance); assert.ok(dashFor(150).speed > dashFor(80).speed); assert.ok(dashFor(150).cooldown < dashFor(80).cooldown);
+  const travelled = [];
+  for (const speed of [80, 150]) {
+    const e = tournament(); e.state.teams[0].fighters[0].speed = speed; e.begin(); const f = e.state.fighters[0], start = f.x;
+    for (const p of e.state.fighters) p.human = true;
+    e.input(f.id, { x: 0, y: 0, dash: true }); assert.equal(f.dashCooldown, dashFor(speed).cooldown);
+    for (let i = 0; i < 6; i++) e.step(0.05);
+    travelled.push(f.x - start); assert.equal(f.dashLeft, 0);
+    assert.equal(e.dash(f, 1, 0), false);
+    assert.equal(e.state.events.filter(v => v.kind === 'dash').length, 1);
+    while (f.dashCooldown > 0) e.step(0.05);
+    f.x = 45; assert.equal(e.dash(f, -1, 0), true); for (let i = 0; i < 6; i++) e.step(0.05); assert.equal(f.x, 45);
+    f.hp = 0; f.dashCooldown = 0; assert.equal(e.dash(f, 1, 0), false);
+  }
+  assert.ok(travelled[1] > travelled[0]);
+});
+test('Arena: a collected apple can be thrown once to heal only the partner, without creating more apples', () => {
+  const e = tournament(); e.begin(); const [f, friend, rival] = e.state.fighters;
+  for (const p of e.state.fighters) p.human = true;
+  assert.equal(e.throwApple(f), false); f.hp = 100;
+  e.state.apples.push({ x: f.x, y: f.y, life: 10 }); e.step(0.01);
+  assert.equal(f.hp, 150); assert.equal(f.apples, 1);
+  assert.equal(e.throwApple(f), false); assert.equal(f.apples, 1);
+  friend.hp = 50; rival.x = f.x; rival.y = (f.y + friend.y) / 2; rival.hp = 100;
+  e.input(f.id, { x: 0, y: 0, apple: true }); e.input(f.id, { x: 0, y: 0, apple: true });
+  assert.equal(f.apples, 0); assert.equal(e.state.thrownApples.length, 1);
+  for (let i = 0; i < 12; i++) e.step(0.05);
+  assert.equal(friend.hp, 100); assert.equal(friend.apples, 0); assert.equal(rival.hp, 100); assert.equal(e.state.thrownApples.length, 0);
+  friend.hp = 195; f.apples = 1; e.throwApple(f); for (let i = 0; i < 12; i++) e.step(0.05); assert.equal(friend.hp, 200);
+  friend.hp = 50; f.apples = 1; e.throwApple(f); friend.hp = 0; e.step(0.05); assert.equal(friend.hp, 0); assert.equal(e.state.thrownApples.length, 0);
+  f.apples = 1; assert.equal(e.throwApple(f), false); assert.equal(f.apples, 1);
+});
+test('Arena: stored apple survives the next round; a new tournament starts empty and inactive actions are rejected', () => {
+  const e = tournament(); assert.equal(e.input('0:0', { x: 0, y: 0, dash: true, apple: true }), false);
+  e.begin(); const f = e.state.fighters[0]; f.apples = 1; e.dash(f, 1, 0); e.finish(0); e.begin();
+  assert.equal(e.state.fighters[0].apples, 1); assert.equal(e.state.fighters[0].dashCooldown, 0);
+  const fresh = tournament(); fresh.begin(); assert.ok(fresh.state.fighters.every(f => f.apples === 0));
 });
 test('Arena: apples fall periodically, cannot heal in mid-air and expire if unclaimed', () => {
   const e = tournament(); e.begin(); for (const f of e.state.fighters) f.human = true;
@@ -72,11 +113,16 @@ test('Arena: apples fall periodically, cannot heal in mid-air and expire if uncl
   for (let i = 0; i < 15; i++) e.step(0.05); assert.equal(f.hp, 60);
   e.state.apples.push({ x: 50, y: 50, life: 0.02 }); e.step(0.05); assert.equal(e.state.apples.length, 0);
 });
-test('Arena: seven bracket matches yield one champion, with HP and cooldown reset between rounds', () => {
+test('Arena: the duo must defeat all seven encounters; minibosses and final boss fight alone with stronger stats', () => {
   const e = tournament();
-  for (let r = 0; r < 3; r++) {
+  for (let r = 0; r < 7; r++) {
     assert.equal(e.begin(), true); assert.equal(e.state.round, r);
-    assert.ok(e.state.fighters.every(f => f.hp === 200 && f.cooldowns.every(c => c === 0)));
+    assert.equal(e.state.fighters.filter(f => f.team === 0).length, 2);
+    const rivals = e.state.fighters.filter(f => f.team !== 0);
+    assert.equal(rivals.length, r < 4 ? 2 : 1);
+    assert.ok(rivals.every(f => f.hp === ENCOUNTERS[r].hp && f.scale === ENCOUNTERS[r].scale));
+    assert.ok(e.state.fighters.every(f => f.hp === f.maxHp && f.cooldowns.every(c => c === 0)));
+    e.state.fighters[0].hp = 1; e.state.fighters[0].cooldowns[0] = 5;
     for (const f of e.state.fighters) if (f.team !== 0) f.hp = 0;
     e.step(0.01);
   }
@@ -84,6 +130,37 @@ test('Arena: seven bracket matches yield one champion, with HP and cooldown rese
   const matches = e.state.rounds.flat(); assert.equal(matches.length, 7);
   assert.ok(matches.every(m => m.winner === m.a || m.winner === m.b));
   assert.equal(e.begin(), false);
+});
+
+test('Arena: boss specials warn both players, allow dodging, alternate targets and stop after defeat', () => {
+  const e = tournament();
+  for (let r = 0; r < 6; r++) { e.begin(); e.finish(0); } e.begin();
+  const [a, b, boss] = e.state.fighters;
+  for (const f of e.state.fighters) { f.human = true; f.nextAttack = 999; }
+  assert.equal(e.partner(boss), undefined); assert.equal(e.throwApple(boss), false);
+  assert.equal(e.target(boss), a); e.state.time = 4; assert.equal(e.target(boss), b);
+  e.state.time = 5.99; e.step(0.02);
+  assert.equal(e.state.warnings.length, 2); assert.equal(a.hp, 200); assert.equal(b.hp, 200);
+  a.x += 200;
+  for (let n = 0; n < 25; n++) e.step(0.05);
+  assert.equal(a.hp, 200); assert.ok(b.hp < 200); assert.equal(e.state.warnings.length, 0);
+  e.state.warnings.push({ life: 1 }); boss.hp = 0; e.step(0.01);
+  assert.equal(e.state.phase, 'champion'); assert.equal(e.state.warnings.length, 0);
+});
+
+test('Arena: losing to a subchief cannot skip it; draws replay the same 2v1 and overtime drains equal HP percentages', () => {
+  const e = tournament();
+  for (let r = 0; r < 4; r++) { e.begin(); e.finish(0); } e.begin();
+  const [a, b, boss] = e.state.fighters;
+  for (const f of e.state.fighters) f.human = true;
+  e.state.time = 120; e.nextSpecial = 999; e.step(0.05);
+  assert.ok(Math.abs(a.hp / a.maxHp - boss.hp / boss.maxHp) < 0.00001);
+  for (const f of e.state.fighters) f.hp = 0; e.step(0.01);
+  assert.equal(e.state.phase, 'draw'); assert.equal(e.rematch(), true);
+  assert.equal(e.state.round, 4); assert.equal(e.state.fighters.length, 3);
+  for (const f of e.state.fighters) if (f.team === 0) f.hp = 0; e.step(0.01);
+  assert.equal(e.state.phase, 'eliminated'); assert.equal(e.state.round, 4);
+  assert.equal(e.state.rounds[5][0].winner, null); assert.equal(e.begin(), false);
 });
 test('Arena: a fallen partner does not end the match; losing and draws cannot advance the player', () => {
   const e = tournament(); e.begin(); e.state.fighters[0].hp = 0; e.step(0.01); assert.equal(e.state.phase, 'battle');

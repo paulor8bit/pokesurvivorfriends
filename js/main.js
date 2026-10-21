@@ -5,7 +5,7 @@
   const NEED = ['U', 'I18n', 'Settings', 'DB', 'Audio', 'Input', 'Touch', 'Sprites', 'Camera', 'Moves', 'Enemies', 'Upgrades', 'Items',
                 'World', 'FX', 'Projectiles', 'EnemyMgr', 'Pickups', 'Player', 'Combat', 'Spawner', 'LevelUp', 'Gacha',
                 'Rift', 'Weather', 'Calendar', 'Progress', 'Hazards', 'Social', 'Net', 'Coop', 'Icons', 'UI', 'HUD',
-                'StartersUI', 'MenuUI', 'RunUI', 'SettingsUI', 'Bots', 'BotsUI', 'ArenaRules', 'ArenaUI', 'Game', 'Flow'];
+                'StartersUI', 'MenuUI', 'RunUI', 'SettingsUI', 'Bots', 'BotsUI', 'ArenaRules', 'ArenaUI', 'SurvivorActions', 'Rogue', 'Game', 'Flow'];
   function broken() {
     // (En la versión publicada G no está en window: va encerrado, ver tools/build.js.)
     const miss = NEED.filter(k => typeof G !== 'object' || !G[k]);

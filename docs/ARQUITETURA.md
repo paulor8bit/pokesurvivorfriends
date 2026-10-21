@@ -26,6 +26,20 @@ A sala mantém somente um catálogo público `{ dex, shiny }` do anfitrião, sem
 
 ## Distribuição
 
+`js/systems/rogue.js` implementa nove hordas finitas em três ciclos, usando o
+mesmo `Game`, `Player`, `EnemyMgr`, combate, XP e botim de Survivor. Cada sala
+usa uma arena de caverna fechada; spawner infinito, eventos e Sentença ficam
+desativados nessa expedição. O anfitrião controla aparições, conclusão da sala,
+perigos dos chefes e bênçãos. A semente, a sala e as bênçãos entram nos quadros
+e no retrato de entrada tardia. Cada jogador aplica cada bênção uma só vez;
+bots que retornam recebem as bênçãos que perderam. Escala e categoria de chefe
+também são transmitidas. O campo `room.mode` vale `survival`, `rogue` ou `arena`;
+apenas o anfitrião muda entre Survivor/Rogue antes da run, em Windows e Android.
+
+Na Arena, `Tournament` executa uma torre fixa de sete encontros: quatro duplas, dois subchefes e um chefe. `ENCOUNTERS` define quantidade de rivais, HP, dificuldade, escala e limite de tempo. O anfitrião simula todos os encontros, inclusive os avisos e explosões dos chefes; não há chaves simuladas. Os quadros incluem os três lutadores das etapas 2v1, avisos e progresso da torre. A prorrogação reduz a mesma porcentagem de HP, evitando vantagem pelo HP extra dos chefes. `Tournament` calcula o dash pelo atributo `spd` do catálogo e controla direção, distância e recarga no anfitrião. Os clientes enviam somente a intenção de usar dash ou lançar maçã, junto do movimento. Cada lutador começa sem reserva: coletar uma maçã cura 25% do HP e deixa uma unidade guardada. A maçã lançada segue exclusivamente o parceiro vivo da mesma dupla, cura 25% do HP e não gera reserva para o alvo. A reserva continua entre lutas da mesma torre e é descartada na seguinte. As teclas de dash e maçã ficam nos ajustes locais, preservando os quatro atalhos de ataque anteriores.
+
+No Survivor, `Player` executa o dash com a velocidade efetiva e verifica colisões em passos de até 8 pixels. `survivor-actions.js` mantém a reserva e os lançamentos em memória, limpa tudo a cada run e fornece os botões e atalhos compartilhados com a Arena. A coleta de maçãs cura 25% do HP. O anfitrião autoriza cada gasto da reserva, escolhe um aliado ferido até 900 pixels (humanos antes de bots) e simula o voo. A cura de humanos remotos é encaminhada ao cliente dono do HP; receber a cura não cria maçãs. Os quadros de rede incluem reserva, voos e estado visual do dash.
+
 `js/systems/arena-powers.js` mantém os poderes da Arena em `save.arenaTraining`, por Pokémon, com quatro ataques equipados. A migração preserva saves anteriores e a mesclagem reúne os poderes aprendidos. Compras usam o saldo local de moedas; os convidados enviam somente os quatro identificadores equipados. O anfitrião valida a compatibilidade com o Pokémon e calcula dano e recarga pelo catálogo local. O conjunto fica fixo durante o campeonato, separado dos ataques da sobrevivência e do treino dos bots.
 
 `npm run build` gera o jogo, monta os arquivos Electron em `.runtime/desktop-package`, verifica a integridade do pacote e produz um único executável em `dist/desktop`. O túnel é incluído no pacote. O usuário final não precisa de Node.js.

@@ -148,12 +148,12 @@ G.Coop = (() => {
     const m = g.find(x => x.kind === 'orbit') || g[0];
     return [r1(local.x), r1(local.y), r2(local.moveAngle), local.walking ? 1 : 0, r1(local.hp), r1(local.maxHp),
             local.dead ? 1 : 0, m ? m.id : '', m ? m.lvl : 1, r1(local.magnet), r2(local.aim), r2(local.xpMul),
-            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq];
+            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, r2(local.dashLeft || 0), r2(local.dashCooldown || 0), r2(local.dashAngle || 0)];
   }
 
   function readState(a) {
     return { x: a[0], y: a[1], ang: a[2], walk: a[3], hp: a[4], maxHp: a[5], dead: a[6], mv: a[7], ml: a[8],
-             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14] };
+             mag: a[9], aim: a[10], xpMul: a[11], rev: a[12], ch: a[13], ld: a[14], dash: a[15], dc: a[16], da: a[17] };
   }
 
   // ---------------- envío ----------------
@@ -194,9 +194,9 @@ G.Coop = (() => {
     }
     const ev = m.q; m.q = [];
     const f = { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10],
-                p, e: enemyList(m.pl), ev, bots: G.Bots.snapshot() };
+                p, e: enemyList(m.pl), ev, bots: G.Bots.snapshot(), actions: G.SurvivorActions.snapshot(), rogue: G.Rogue.snapshot() };
     f.ne = G.EnemyMgr.all().filter(e => !e.dead && !m.known.has(e.id) && G.U.dist2(e.x, e.y, m.pl.x, m.pl.y) < NEAR * NEAR).slice(0, 120).map(e => {
-      m.known.add(e.id); return [e.id, e.dex, r1(e.x), r1(e.y), e.boss ? 1 : 0, e.shiny ? 1 : 0, Math.ceil(e.maxHp), r2(e.dmg), e.behavior];
+      m.known.add(e.id); return [e.id, e.dex, r1(e.x), r1(e.y), e.boss ? 1 : 0, e.shiny ? 1 : 0, Math.ceil(e.maxHp), r2(e.dmg), e.behavior, e.scale, e.rogueRank];
     });
     f.pk = G.Pickups.all().filter(o => !m.pickups.has(o.id) && G.U.dist2(o.x, o.y, m.pl.x, m.pl.y) < NEAR * NEAR).map(o => {
       m.pickups.add(o.id); return [o.id, o.kind, r1(o.x), r1(o.y), o.value];
@@ -231,7 +231,7 @@ G.Coop = (() => {
             const room = G.Social.room;
             if (!room?.run) continue;
             m.known.clear(); m.props.clear(); m.pickups.clear(); m.joinT = 1;
-            G.Net.send(m.uid, { k: 'start', seed: runCfg.seed, runId: runCfg.runId, host: hostUid, members: room.members, bots: room.bots, snapshot: api.snapshot() });
+            G.Net.send(m.uid, { k: 'start', mode: room.run.mode || room.mode, seed: runCfg.seed, runId: runCfg.runId, host: hostUid, members: room.members, bots: room.bots, snapshot: api.snapshot() });
           }
         }
         m.flushT -= dt;
@@ -288,6 +288,7 @@ G.Coop = (() => {
     m.pending = false;
     for (const ev of msg.ev || []) {
       switch (ev[0]) {
+        case 'apple': if (!m.pl.net?.dead && !m.pl.net?.ch) G.SurvivorActions.throwFor(m.pl); break;
         case 'h': {
           const e = G.EnemyMgr.get(ev[1]);
           if (!e || e.dead || e.remote) break;
@@ -344,6 +345,8 @@ G.Coop = (() => {
   });
 
   function onHostFrame(msg) {
+    G.Rogue.receive(msg.rogue);
+    G.SurvivorActions.receive(msg.actions);
     lastHostAt = performance.now();
     if (stalled) { stalled = false; updateAway(); }
     G.Bots.receiveFrame(msg.bots || []);
@@ -384,12 +387,13 @@ G.Coop = (() => {
   function applyHostEvent(ev) {
     switch (ev[0]) {
       case 'ne':
-        G.EnemyMgr.addRemote({ id: ev[1], dex: ev[2], x: ev[3], y: ev[4], boss: !!ev[5], shiny: !!ev[6], hp: ev[7], dmg: ev[8], beh: ev[9] });
+        G.EnemyMgr.addRemote({ id: ev[1], dex: ev[2], x: ev[3], y: ev[4], boss: !!ev[5], shiny: !!ev[6], hp: ev[7], dmg: ev[8], beh: ev[9], scale: ev[10], rank: ev[11] });
         break;
       case 'ed': G.EnemyMgr.removeRemote(ev[1], true); break;
       case 'eg': G.EnemyMgr.removeRemote(ev[1], false); break;
       case 'hn': { const e = G.EnemyMgr.get(ev[1]); if (e && !e.dead) e.showHurt(ev[2], ev[3]); break; }
       case 'es':
+        if (G.Rogue.active && G.Rogue.state.phase !== 'fight') break;
         G.Projectiles.spawn({ x: ev[1], y: ev[2], vx: ev[3], vy: ev[4], dmg: ev[5], r: ev[6], life: ev[7],
                               friendly: false, color: '#ff7a9e', vis: G.VFX.forType(ev[8]), mtype: ev[8], cat: ev[9] });
         break;
@@ -418,7 +422,7 @@ G.Coop = (() => {
       case 'jd': case 'jk': G.Judgment.onEvent(ev); break;
       case 'wx': G.Weather.onEvent(ev); break;
       case 'ev': G.Events.onNet(ev); break;
-      case 'hz': G.Hazards.add(ev[1], true); break;
+      case 'hz': if (!G.Rogue.active || G.Rogue.state.phase === 'fight') G.Hazards.add(ev[1], true); break;
       case 'fxr': G.FX.ring(ev[1], ev[2], 8, ev[3], ev[4], 0.5, 3); break;
     }
   }
@@ -440,7 +444,7 @@ G.Coop = (() => {
   // anfitrión
   function hurtShown(e, d, color) { emitNear(['hn', e.id, d, color], e.x, e.y, hitFrom); }
   function enemyAdded(e) {
-    emit(['ne', e.id, e.dex, r1(e.x), r1(e.y), e.boss ? 1 : 0, e.shiny ? 1 : 0, Math.ceil(e.maxHp), r2(e.dmg), e.behavior]);
+    emit(['ne', e.id, e.dex, r1(e.x), r1(e.y), e.boss ? 1 : 0, e.shiny ? 1 : 0, Math.ceil(e.maxHp), r2(e.dmg), e.behavior, e.scale, e.rogueRank]);
   }
   function enemyGone(e, died) { emit([died ? 'ed' : 'eg', e.id]); }
   function enemyShot(p, type) { emit(['es', r1(p.x), r1(p.y), r1(p.vx), r1(p.vy), r2(p.dmg), p.r, p.life, type, p.cat]); }
@@ -460,11 +464,13 @@ G.Coop = (() => {
     if (p.kind === 'bomb') emit(['bomb', r1(who.x), r1(who.y)]);
     if ((p.kind === 'heal' || p.kind === 'item') && who !== local) {
       const m = mates.get(who.uid);
-      if (m) m.q.push(p.kind === 'heal' ? ['heal', 0.3] : ['item', p.value]);
+      if (m) m.q.push(p.kind === 'heal' ? ['heal', 0.25] : ['item', p.value]);
     }
   }
 
   function shinyCaught(e) { emit(['sh', e.dex]); }
+  function giveHeal(uid, fraction = 0.25) { const m = mates.get(uid); if (host && m?.connected) m.q.push(['heal', fraction]); }
+  function resetWorld() { if (host) for (const m of mates.values()) { m.known.clear(); m.props.clear(); m.pickups.clear(); m.q = []; } }
 
   // ---------------- subida de nivel compartida ----------------
 
@@ -535,7 +541,7 @@ G.Coop = (() => {
   return {
     ANIMS, COLORS, begin, end, leave, tick, players, puppets, syncRoom, xpFactor, scaleRate, scaleHp,
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
-    propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
+    propBroken, collected, giveHeal, resetWorld, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */
     broadcast(ev) { emit(ev); },
     toHost(ev) { if (active && !host) { outEv.push(ev); flushClient(true); } },

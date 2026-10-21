@@ -43,6 +43,19 @@ test('Arena rooms allow one invited partner, lock entry during the tournament an
   assert.equal((await extra.rpc('join', { code: created.room.id, member: mon('Extra') })).ok, true);
 });
 const mon = name => ({ name, dex: 25, shiny: false });
+test('Rogue rooms share mode, keep four-human capacity and accept live guests without allowing mode changes mid-run', async t => {
+  const s = await setup(t), host = await s.client(), friend = await s.client();
+  const created = await host.rpc('create', { member: mon('Host'), mode: 'rogue' });
+  assert.equal(created.room.mode, 'rogue');
+  assert.equal((await friend.rpc('join', { code: created.room.id, member: mon('Amigo') })).room.mode, 'rogue');
+  assert.equal((await friend.rpc('slots', { slots: [], mode: 'survival' })).ok, false);
+  assert.equal((await host.rpc('slots', { slots: [], mode: 'survival' })).ok, true);
+  assert.equal((await host.rpc('slots', { slots: [], mode: 'rogue' })).ok, true);
+  assert.equal((await host.rpc('start', { seed: 7 })).room.run.mode, 'rogue');
+  assert.equal((await host.rpc('slots', { slots: [], mode: 'survival' })).ok, false);
+  for (const name of ['Extra A', 'Extra B']) { const p = await s.client(); assert.equal((await p.rpc('join', { code: created.room.id, member: mon(name) })).ok, true); }
+  const fifth = await s.client(); assert.equal((await fifth.rpc('join', { code: created.room.id, member: mon('Cheia') })).ok, false);
+});
 
 test('serves game files, keeps checkout and scripts private, no stale tunnel metadata', async t => {
   const s = await setup(t);

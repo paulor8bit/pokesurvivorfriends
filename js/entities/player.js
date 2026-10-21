@@ -70,6 +70,7 @@ G.Player = class Player {
     this.aim = Math.PI / 2;
     this.moveAngle = Math.PI / 2;
     this.walking = false;
+    this.dashCooldown = 0; this.dashLeft = 0; this.dashAngle = 0; this.dashSpeed = 0; this.apples = 0;
     this.inLiquid = false;
     this.lavaTick = 0;
     this.attackFace = 0;       // tiempo que sigue mirando al objetivo tras atacar
@@ -283,6 +284,7 @@ G.Player = class Player {
     }
     if (this.hp <= 0) {
       this.hp = 0; this.dead = true;
+      this.dashLeft = 0;
       this.anim.play('Faint', { hold: true });
       G.Projectiles.clearOrbs(this);
       this.reviveT = 0;
@@ -342,9 +344,19 @@ G.Player = class Player {
   }
 
   // ---------------- ciclo ----------------
+  dash(x, y) {
+    if (this.dead || this.frozen || this.remote || this.dashCooldown > 0 || !Number.isFinite(x) || !Number.isFinite(y)) return false;
+    const stats = G.ArenaRules.dashFor(this.spd);
+    this.dashAngle = Math.hypot(x, y) > 0.05 ? Math.atan2(y, x) : this.moveAngle;
+    this.dashLeft = stats.distance; this.dashSpeed = stats.speed; this.dashCooldown = stats.cooldown;
+    G.FX.ring(this.x, this.y, 6, 38, '#7bdcff', 0.25, 2); G.Audio.sfx('select');
+    return true;
+  }
   update(dt) {
     this.anim.update(dt);
     if (this.dead) return;
+    this.dashCooldown = Math.max(0, this.dashCooldown - dt);
+    if (this.frozen) this.dashLeft = 0;
     if (this.invuln > 0) this.invuln -= dt;
     if (this.flash > 0) this.flash -= dt;
     if (this.attackFace > 0) this.attackFace -= dt;
@@ -367,10 +379,17 @@ G.Player = class Player {
     const slide = this.inLiquid && G.World.liquidEffect(this.mon.types).slide;
     this.svx = slide ? G.U.damp(this.svx || 0, ax * s * 1.15, 1.6, dt) : ax * s;
     this.svy = slide ? G.U.damp(this.svy || 0, ay * s * 1.15, 1.6, dt) : ay * s;
-    this.x += this.svx * dt;
-    this.y += this.svy * dt;
-    G.World.collide(this);
-    if (this.walking) this.moveAngle = Math.atan2(ay, ax);
+    if (this.dashLeft > 0) {
+      const distance = Math.min(this.dashLeft, this.dashSpeed * dt), steps = Math.max(1, Math.ceil(distance / 8));
+      for (let i = 0; i < steps; i++) {
+        this.x += Math.cos(this.dashAngle) * distance / steps; this.y += Math.sin(this.dashAngle) * distance / steps;
+        G.World.collide(this);
+      }
+      this.dashLeft = Math.max(0, this.dashLeft - distance); this.walking = true; this.moveAngle = this.dashAngle;
+    } else {
+      this.x += this.svx * dt; this.y += this.svy * dt; G.World.collide(this);
+      if (this.walking) this.moveAngle = Math.atan2(ay, ax);
+    }
 
     // --- terreno líquido ---
     this.inLiquid = G.World.isLiquid(this.x, this.y);
@@ -482,6 +501,7 @@ G.Player = class Player {
     else { this.x = G.U.damp(this.x, n.x, 14, dt); this.y = G.U.damp(this.y, n.y, 14, dt); }
     if (n.hp < this.hp - 0.5 && !n.dead) this.flash = 0.14;
     this.hp = n.hp; this.maxHp = n.maxHp;
+    this.dashLeft = n.dash || 0; this.dashAngle = n.da || 0; this.dashCooldown = n.dc || 0;
     this.magnet = n.mag || this.magnet;
     this.reviveT = n.rev || 0;
     if (n.dead && !this.dead) { this.dead = true; this.anim.play('Faint', { hold: true }); G.Projectiles.clearOrbs(this); }

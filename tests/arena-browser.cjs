@@ -66,6 +66,11 @@ const { createGameServer } = require('../server/game-server');
     assert.equal(await p.evaluate(() => G.ArenaUI.state.fighters.filter(f => f.team === 0 && !f.human).length), 1);
     assert.deepEqual(await p.evaluate(() => G.ArenaUI.state.fighters[0].cooldowns), [0, 0, 0, 0]);
     assert.equal(await p.evaluate(() => G.ArenaUI.state.fighters[0].moves[1].id), purchased);
+    assert.equal(await p.locator('#arena-apple').isDisabled(), true);
+    assert.match(await p.locator('#arena-apple').innerText(), /0\/1/);
+    await p.keyboard.down('ArrowRight'); await p.keyboard.press('Space'); await p.keyboard.up('ArrowRight');
+    await p.waitForFunction(() => G.ArenaUI.state.fighters[0].dashCooldown > 0);
+    await p.waitForFunction(() => document.querySelector('#arena-dash').disabled);
     await p.keyboard.press('Numpad1'); await p.waitForFunction(() => G.ArenaUI.state.fighters[0].cooldowns[0] > 0);
     await p.waitForFunction(() => window.__arenaAssets.sounds.includes('shot') && window.__arenaAssets.sprites > 0 && window.__arenaAssets.tiles > 0 && window.__arenaAssets.effects > 0);
     await p.locator('[data-arena-attack="3"]').click(); await p.waitForFunction(() => G.ArenaUI.state.fighters[0].cooldowns[3] > 0);
@@ -76,18 +81,28 @@ const { createGameServer } = require('../server/game-server');
     assert.equal(await p.evaluate(() => window.__arenaAssets.sounds.filter(s => s === 'shot').length), pausedSounds);
     await p.locator('#set-close').click();
     await p.locator('#arena-settings').click(); await p.locator('[data-arena-key="1"]').click(); await p.keyboard.press('KeyQ');
+    await p.locator('[data-arena-key="4"]').click(); await p.keyboard.press('KeyR');
+    await p.locator('[data-arena-key="5"]').click(); await p.keyboard.press('KeyT');
     await p.locator('#set-close').click(); await p.keyboard.press('KeyQ');
     await p.waitForFunction(() => G.ArenaUI.state.fighters[0].cooldowns[1] > 0);
     await p.evaluate(() => { const s = G.ArenaUI.state, f = s.fighters[0]; f.hp = 50; s.apples.push({ x: f.x, y: f.y, life: 8 }); });
     await p.waitForFunction(() => G.ArenaUI.state.fighters[0].hp >= 100);
+    await p.waitForFunction(() => G.ArenaUI.state.fighters[0].apples === 1);
     await p.waitForFunction(() => window.__arenaAssets.sounds.includes('heal'));
     await p.setViewportSize({ width: 844, height: 390 });
-    for (const b of await p.locator('[data-arena-attack]').all()) { const r = await b.boundingBox(); assert.ok(r.x >= 0 && r.y >= 0 && r.x + r.width <= 844 && r.y + r.height <= 390); }
+    for (const b of await p.locator('#arena-attacks button').all()) { const r = await b.boundingBox(); assert.ok(r.x >= 0 && r.y >= 0 && r.x + r.width <= 844 && r.y + r.height <= 390); }
+    assert.equal(await p.locator('#arena-attacks button').count(), 6);
     fs.mkdirSync('.runtime', { recursive: true }); await p.screenshot({ path: '.runtime/arena-mobile.png' });
-    for (let round = 0; round < 3; round++) {
+    for (let round = 0; round < 7; round++) {
+      assert.equal(await p.evaluate(() => G.ArenaUI.state.fighters.filter(f => f.team !== 0).length), round < 4 ? 2 : 1);
+      if (round >= 4) {
+        await p.waitForFunction(() => !document.querySelector('#arena-boss').classList.contains('hidden'));
+        assert.equal(await p.evaluate(() => G.ArenaUI.state.fighters[2].maxHp), [440, 520, 760][round - 4]);
+        if (round === 6) { await p.waitForTimeout(400); await p.screenshot({ path: '.runtime/arena-boss-mobile.png' }); }
+      }
       await p.evaluate(() => { for (const f of G.ArenaUI.state.fighters) if (f.team !== 0) f.hp = 0; });
       await p.waitForFunction(() => G.ArenaUI.state.phase !== 'battle');
-      if (round < 2) await p.locator('#arena-next').click();
+      if (round < 6) await p.locator('#arena-next').click();
     }
     assert.equal(await p.evaluate(() => G.ArenaUI.state.phase), 'champion'); await p.locator('#arena-exit').click();
     assert.equal(await p.evaluate(() => G.DB.save.coins), before.coins);
@@ -106,20 +121,69 @@ const { createGameServer } = require('../server/game-server');
     await p.locator('#arena-start').click(); await p.locator('#arena-next').click();
     await friend.page.waitForFunction(() => G.ArenaUI.state?.phase === 'battle');
     assert.equal(await p.evaluate(() => G.ArenaUI.state.fighters[1].moves[0].id), friendMove);
+    assert.equal(await friend.page.locator('#arena-apple').isDisabled(), true);
+    await friend.page.keyboard.down('ArrowDown'); await friend.page.keyboard.press('Space'); await friend.page.keyboard.up('ArrowDown');
+    await p.waitForFunction(() => G.ArenaUI.state.fighters[1].dashCooldown > 0);
+    await friend.page.waitForFunction(() => document.querySelector('#arena-dash').disabled);
+    await p.evaluate(() => {
+      const s = G.ArenaUI.state, [host, guest] = s.fighters;
+      host.x = 250; host.y = 250; host.hp = 100; guest.x = 650; guest.y = 250; guest.hp = 50; guest.dashLeft = 0;
+      for (const rival of s.fighters.filter(f => f.team !== 0)) { rival.x = 1050; rival.nextAttack = 999; }
+      s.shots = []; s.apples.push({ x: host.x, y: host.y, life: 8 });
+    });
+    await p.waitForFunction(() => G.ArenaUI.state.fighters[0].apples === 1);
+    await p.locator('#arena-apple').click();
+    await p.waitForFunction(() => G.ArenaUI.state.thrownApples.length === 1);
+    await friend.page.waitForFunction(() => G.ArenaUI.state.fighters[1].hp === 100);
+    assert.equal(await p.evaluate(() => G.ArenaUI.state.fighters[0].apples), 0);
+    assert.equal(await friend.page.evaluate(() => G.ArenaUI.state.fighters[1].apples), 0);
+    await p.evaluate(() => {
+      const s = G.ArenaUI.state, [host, guest] = s.fighters; host.hp = 50;
+      s.apples.push({ x: guest.x, y: guest.y, life: 8 });
+    });
+    await friend.page.waitForFunction(() => G.ArenaUI.state.fighters[1].apples === 1);
+    await friend.page.keyboard.press('KeyE');
+    await p.waitForFunction(() => G.ArenaUI.state.fighters[0].hp === 100 && G.ArenaUI.state.fighters[1].apples === 0);
     await friend.page.keyboard.press('Numpad1');
     await p.waitForFunction(() => G.ArenaUI.state.fighters[1].cooldowns[0] > 0);
     await friend.page.waitForFunction(() => window.__arenaSounds.includes('shot'));
     await p.waitForFunction(() => G.ArenaUI.state.fighters[1].human === true);
+    for (let round = 0; round < 6; round++) {
+      await p.evaluate(() => { for (const f of G.ArenaUI.state.fighters) if (f.team !== 0) f.hp = 0; });
+      await p.waitForFunction(() => G.ArenaUI.state.phase === 'bracket');
+      await friend.page.waitForFunction(r => G.ArenaUI.state.round === r + 1 && G.ArenaUI.state.phase === 'bracket', round);
+      if (round === 3) {
+        assert.equal(await p.locator('.arena-rung.won').count(), 4);
+        await p.screenshot({ path: '.runtime/arena-ladder.png' });
+      }
+      await p.locator('#arena-next').click();
+      await friend.page.waitForFunction(r => G.ArenaUI.state.round === r + 1 && G.ArenaUI.state.phase === 'battle', round);
+      if (round >= 3) {
+        const snapshot = await friend.page.evaluate(() => G.ArenaUI.state.fighters.map(f => ({ team: f.team, maxHp: f.maxHp, rank: f.rank, scale: f.scale })));
+        assert.equal(snapshot.length, 3); assert.equal(snapshot[2].maxHp, [440, 520, 760][round - 3]);
+        assert.ok(snapshot[2].scale > 1); assert.equal(snapshot[1].team, 0);
+      }
+    }
+    await p.waitForFunction(() => G.ArenaUI.state.warnings.length === 2);
+    await friend.page.waitForFunction(() => G.ArenaUI.state.warnings.length === 2);
+    assert.equal(await p.evaluate(() => document.querySelector('#arena-notice').getBoundingClientRect().top > document.querySelector('#arena-boss').getBoundingClientRect().bottom), true);
+    await p.screenshot({ path: '.runtime/arena-boss-desktop.png' });
+    await p.setViewportSize({ width: 844, height: 390 });
+    assert.equal(await p.evaluate(() => document.querySelector('#arena-notice').getBoundingClientRect().top > document.querySelector('#arena-boss').getBoundingClientRect().bottom), true);
+    await p.screenshot({ path: '.runtime/arena-boss-warning-mobile.png' });
+    await p.setViewportSize({ width: 1280, height: 800 });
     await friend.context.close(); await p.waitForFunction(() => G.ArenaUI.state.fighters[1].human === false);
+    assert.equal(await p.evaluate(() => G.ArenaUI.state.fighters.length), 3);
     await p.screenshot({ path: '.runtime/arena-desktop.png' });
     await p.locator('#arena-exit').click(); await p.waitForFunction(() => G.Social.room === null);
     await p.reload(); await p.waitForSelector('#boot.hidden', { state: 'attached' });
     if (await p.locator('#tap-start').isVisible()) await p.locator('#tap-start').click();
     await p.waitForSelector('#scr-menu:not(.hidden)');
     assert.deepEqual(await p.evaluate(() => G.Settings.get('arenaKeys')), ['Numpad1', 'KeyQ', 'Numpad3', 'Numpad4']);
+    assert.deepEqual(await p.evaluate(() => G.ArenaUI.controlKeys().slice(4)), ['KeyR', 'KeyT']);
     assert.equal(await p.evaluate(() => G.ArenaPowers.profile(25).loadout[1]), purchased);
     assert.equal(await p.evaluate(() => G.DB.save.coins), before.coins);
     assert.deepEqual(errors, []);
-    console.log('Arena: compra por moedas, troca grátis, poderes salvos após reabrir, poderes próprios do convidado por relé, quatro ataques manuais, campeonato, celular e encerramento passaram.');
+    console.log('Arena: torre de sete lutas, quatro duplas, dois subchefes e chefe 2v1, avisos sincronizados, bot ao desconectar, dash/maçãs, controles e poderes salvos passaram.');
   } finally { await browser.close(); await game.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

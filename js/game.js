@@ -117,6 +117,8 @@ G.Game = (() => {
     G.Combat.clearFields();
     G.EnemyMgr.clear();
     G.Pickups.clear();
+    G.SurvivorActions.reset();
+    G.Rogue.reset();
     G.Spawner.reset();
     G.Rift.reset();
     G.Judgment.reset();
@@ -159,6 +161,7 @@ G.Game = (() => {
       time = s.time; biome = s.baseBiome;
       G.World.setBiome(s.worldBiome, true);
       G.Rift.restore(s.rift); G.Judgment.restore(s.judgment); G.Events.restore(s.event);
+      G.Rogue.restore(s.rogue);
       if (s.weather) G.Weather.force(s.weather.kind, s.weather.left);
       for (const h of s.hazards || []) G.Hazards.add(h, true);
       pl.x = s.x + ((selected.slot || 1) - 2) * 38; pl.y = s.y + 40;
@@ -171,6 +174,7 @@ G.Game = (() => {
       banked = { t1: s.team.t1 || 0, t10: s.team.t10 || 0 };
       coopApi.syncTeam(s.team);
     }
+    if (!coop?.snapshot && coop?.mode === 'rogue') G.Rogue.begin(coop.seed);
     G.Camera.x = pl.x; G.Camera.y = pl.y; G.Camera.shake = 0;
     // Hojas de sprites locales: el compañero y los primeros enemigos.
     G.Sprites.preload([mon.dex], 8000, pl.shiny);
@@ -203,7 +207,7 @@ G.Game = (() => {
   function teamState() {
     return { time, level: pl.level, xp: pl.xp, xpNext: pl.xpNext, kills: pl.kills, bosses: pl.bosses, coins: pl.coins, t1: pl.t1, t10: pl.t10 };
   }
-  function summary() { return { t: time, ki: pl.kills, bo: pl.bosses, co: pl.coins, lv: pl.level, t1: pl.t1, t10: pl.t10 }; }
+  function summary() { return { t: time, ki: pl.kills, bo: pl.bosses, co: pl.coins, lv: pl.level, t1: pl.t1, t10: pl.t10, rogue: G.Rogue.summary() }; }
 
   /** Lo que el cooperativo necesita del juego. */
   /**
@@ -227,6 +231,7 @@ G.Game = (() => {
     team: teamState,
     snapshot() { return { team: teamState(), time, baseBiome: biome, worldBiome: G.World.biome, x: pl.x, y: pl.y,
       rift: G.Rift.snapshot(), judgment: G.Judgment.snapshot(), event: G.Events.snapshot(), weather: G.Weather.current,
+      rogue: G.Rogue.snapshot(),
       hazards: G.Hazards.all.slice(0, 64).map(h => ({ ...h })) }; },
     summary,
     // Invitado: el anfitrión manda el reloj y lo del equipo.
@@ -261,10 +266,11 @@ G.Game = (() => {
     inLevelUp() { return state === 'levelup'; },
     shiny(dex) { G.onShinyCaught({ dex, name: (G.DEX_BY[dex] || {}).name || '' }); },
     over(d) {
+      if (d?.rogue) G.Rogue.result(d.rogue);
       if (d) Object.assign(pl, { kills: d.ki, bosses: d.bo, coins: d.co, level: Math.max(pl.level, d.lv || 1), t1: d.t1 || pl.t1, t10: d.t10 || pl.t10 });
       if (d && d.t) time = d.t;
       if (d && d.why === 'host') G.UI.toast('El anfitrión ha terminado la partida', 3200);
-      endRun(!(d && d.why === 'host'));
+      endRun(d?.rogue?.victory ? false : !(d && d.why === 'host'));
     },
     lost(msg) { G.UI.toast(msg, 3600); endRun(false); },
     item(id) { offerItem(id); },
@@ -324,6 +330,8 @@ G.Game = (() => {
 
   function endRun(dead = true) {
     if (state === 'over' || !pl) return;
+    const rogue = G.Rogue.summary();
+    G.Rogue.end();
     const coop = !!pl.hadFriends;
     const wasHost = !!pl.coopHost;
     if (wasHost && G.Social.room?.run) G.Social.finishRun().catch(() => {});
@@ -331,6 +339,7 @@ G.Game = (() => {
     if (G.Coop.active) G.Coop.end();
     if (coop) G.Social.setPlaying(false);
     state = 'over';
+    G.SurvivorActions.reset();
     G.Audio.music(null);
     G.Audio.sfx(dead ? 'gameover' : 'back');
     const save = G.DB.save;
@@ -365,7 +374,7 @@ G.Game = (() => {
     if (G.Social.me) G.Social.publishProfile();
 
     G.RunUI.showOver({
-      dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
+      dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge, rogue,
       moves: pl.moves, caught,
       breakdown: Object.entries(parts).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(' · ') +
                  (mul > 1 ? ` · ×${mul.toFixed(2)} Fortuna` : '')
@@ -533,7 +542,8 @@ G.Game = (() => {
       return;
     }
     if (p.kind === 'heal') {
-      if (mine) pl.heal(pl.maxHp * 0.3);
+      if (mine) pl.heal(pl.maxHp * 0.25);
+      G.SurvivorActions.collect(who);
       G.FX.ring(who.x, who.y, 6, 60, '#5fe08a', 0.4, 3);
       return;
     }
@@ -589,6 +599,7 @@ G.Game = (() => {
     }
     if (G.Input.tap('escape') || G.Input.tap('keyp')) { togglePause(); return; }
     if (state !== 'playing' || !pl) return;
+    G.SurvivorActions.input();
     // (Ya no se alterna entre ataques: todos se lanzan a la vez.)
   }
 
@@ -642,6 +653,8 @@ G.Game = (() => {
       if (pl && state !== 'ui') render(); else Backdrop.render(ctx, w, h, dpr, dt);
     }
     G.UI.tick(dt);
+    G.SurvivorActions.ui();
+    G.Rogue.ui();
 
     G.Input.endFrame();
   }
@@ -673,7 +686,7 @@ G.Game = (() => {
     time += dt;
 
     const b = Math.floor(time / 240);
-    if (b !== biome && !G.Rift.inArena && !G.Judgment.active) {
+    if (b !== biome && !G.Rift.inArena && !G.Judgment.active && !G.Rogue.active) {
       biome = b;
       G.World.setBiome(b);
       G.Audio.sfx('biome');
@@ -694,7 +707,7 @@ G.Game = (() => {
     G.World.update(dt, G.Camera);
 
     const all = everyone();
-    if (!coop || G.Coop.isHost) { G.Path.update(dt, all); G.Spawner.update(dt, all, time); }
+    if (!coop || G.Coop.isHost) { G.Path.update(dt, all); if (!G.Rogue.active) G.Spawner.update(dt, all, time); else G.Spawner.tickBanner(dt); }
     else G.Spawner.tickBanner(dt);
     G.EnemyMgr.update(dt, all);
     G.EnemyMgr.rebuildGrid();
@@ -703,15 +716,15 @@ G.Game = (() => {
     G.Combat.resolve(dt, pl, time);
     G.Combat.updateFields(dt);
     G.Pickups.update(dt, all, onCollect);
+    G.SurvivorActions.update(dt);
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
-    G.Rift.update(dt, pl, time);
-    G.Judgment.update(dt, pl, time);
-    G.Events.update(dt, all, time);
+    if (G.Rogue.active) G.Rogue.update(dt);
+    else { G.Rift.update(dt, pl, time); G.Judgment.update(dt, pl, time); G.Events.update(dt, all, time); }
     G.Weather.update(dt, time, pl);
     G.FX.update(dt);
 
-    G.Audio.music(G.Judgment.active ? G.Judgment.music : G.Rift.inArena ? 'rift' : G.EnemyMgr.bossAlive() ? 'boss' : G.BIOME_MUSIC[biome % G.BIOME_MUSIC.length]);
+    G.Audio.music(G.Rogue.active ? G.Rogue.music : G.Judgment.active ? G.Judgment.music : G.Rift.inArena ? 'rift' : G.EnemyMgr.bossAlive() ? 'boss' : G.BIOME_MUSIC[biome % G.BIOME_MUSIC.length]);
     if (!coop || G.Coop.isHost) maybeLevelUp();
     if (pl.bonds > 0) offerBond(true);
     if (G.Coop.isHost) checkAllDown(dt);
@@ -753,6 +766,8 @@ G.Game = (() => {
     for (const e of extra) items.push({ y: e.y, ent: e });
     const rift = G.Rift.drawable();
     if (rift) items.push({ y: rift.y, ent: rift });
+    const cave = G.Rogue.drawable();
+    if (cave) items.push({ y: cave.y, ent: cave });
     const arceus = pl && state !== 'ui' ? G.Judgment.drawable() : null;
     if (arceus) items.push({ y: arceus.y, ent: arceus });
     if (pl && state !== 'ui') for (const d of G.Events.drawables()) items.push({ y: d.y, ent: d });
@@ -800,6 +815,7 @@ G.Game = (() => {
     G.Camera.apply(ctx);
     drawScene(G.Camera, [pl, ...(G.Coop.active ? G.Coop.puppets() : []), ...G.Bots.list()]);
     G.Projectiles.draw(ctx);
+    G.SurvivorActions.draw(ctx);
     G.Combat.drawAirFields(ctx);
     G.FX.draw(ctx);
     G.Judgment.drawAir(ctx);
@@ -934,6 +950,7 @@ G.Game = (() => {
 
   return {
     init, startRun, everyone, levelXp, flash, offerBond,
+    finishRogue() { if (!G.Rogue.summary()?.victory || (G.Coop.active && !G.Coop.isHost)) return; if (G.Coop.active) G.Coop.over(summary()); endRun(false); },
     /** Para pruebas: salta el reloj de la run. */
     debugTime(t) { tampered = true; time = t; },
     /** Para grabar vídeos: cámara lenta (0,5 = mitad de velocidad). */

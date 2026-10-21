@@ -11,7 +11,7 @@ G.MenuUI = (() => {
 
   function init() {
     G.ArenaUI.init();
-    const ICON = { arena: 'trophy', play: 'ball', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', bots: 'friends', rank: 'trophy', settings: 'gear' };
+    const ICON = { rogue: 'rift', arena: 'trophy', play: 'ball', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', bots: 'friends', rank: 'trophy', settings: 'gear' };
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
@@ -19,6 +19,7 @@ G.MenuUI = (() => {
         const go = b.dataset.go;
         if (go === 'play') { if (G.Social.room?.mode === 'arena') G.ArenaUI.open(); else G.FriendsUI.open(); }
         else if (go === 'arena') G.ArenaUI.open();
+        else if (go === 'rogue') G.FriendsUI.open('rogue');
         else if (go === 'dex') openDex();
         else if (go === 'upgrades') openUpgrades();
         else if (go === 'gacha') G.GachaUI.open();

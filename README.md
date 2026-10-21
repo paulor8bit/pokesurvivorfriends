@@ -25,12 +25,41 @@ Instruções completas: [Jogar online](docs/JOGAR-ONLINE.md).
 
 Convidados podem escolher iniciais ou Pokémon emprestados da coleção do anfitrião. Quem já joga no próprio aplicativo pode colar o link completo em **Jogar → Entrar por convite** e selecionar **Minha coleção**, usando suas melhorias e seu ataque inicial salvos. Os empréstimos não desbloqueiam Pokémon no salvamento do convidado.
 
+## Rogue · Cavernas
+
+Abra **Rogue · Cavernas** no menu ou escolha **Rogue** no seletor de modo da
+sala. São **nove salas em três ciclos**: cada ciclo tem uma horda fácil,
+uma horda média com subchefe e um chefe maior com ataques avisados no chão.
+As cavernas de musgo, cristais e brasas usam os terrenos, Pokémon, efeitos e
+sons do jogo, com uma nova música de exploração. A dificuldade cresce a cada ciclo.
+
+Limpe a sala, recolha o saque e escolha uma das três bênçãos oferecidas para
+a equipe entrar na próxima. As bênçãos, os níveis e os ataques continuam
+durante a expedição; a próxima run começa novamente no nível 1. Vencer a nona
+sala conclui a expedição. Se todos os jogadores humanos caírem, ela termina.
+Moedas e recompensas coletadas seguem o salvamento local habitual.
+
+O modo aceita até quatro jogadores humanos, bots e convidados que chegam
+durante a partida. Dash e maçãs compartilhadas também funcionam. O anfitrião
+escolhe o modo antes de começar, controla as hordas e escolhe a bênção da equipe.
+
 ## Arena 2 × 2
 
-No menu, abra **Arena 2 × 2** para um campeonato com oito duplas: quartas,
-semifinal e final. Escolha seu Pokémon e forme dupla com um bot ou crie um
-convite para um amigo. As duplas adversárias são bots; as outras chaves são
-simuladas. Um amigo que desconecta é substituído por um bot.
+**Dash e maçã também funcionam no Survivor.** Use Espaço para o dash e E para
+lançar uma maçã, ou os dois botões na tela. Os atalhos são compartilhados com
+a Arena e podem ser alterados em Configurações → Controles. O dash usa a
+velocidade atual do Pokémon, incluindo melhorias, e respeita os obstáculos.
+Cada run começa sem maçãs: coletar uma cura 25% do HP e guarda uma unidade
+para alimentar um aliado ferido próximo. O lançamento prioriza amigos e,
+na falta deles, pode curar um bot. Receber uma maçã cura 25% do HP e não cria
+outra maçã. Só é possível guardar uma por vez.
+
+No menu, abra **Arena 2 × 2** para subir uma torre de sete lutas em sequência:
+quatro duplas rivais, dois subchefes (Machamp e Lucario) e Mewtwo como chefe
+final. As primeiras lutas são 2 contra 2; contra subchefes e chefe, sua dupla
+enfrenta um único rival mais forte, em 2 contra 1. Escolha seu Pokémon e forme
+dupla com um bot ou crie um convite para um amigo. Todos os desafios são jogados,
+e a torre marca cada vitória. Um amigo que desconecta é substituído por um bot.
 
 A seleção usa uma grade de personagens no estilo dos jogos de luta, com
 retratos grandes dos dois integrantes da dupla. Escolha **P1** ou **P2** e
@@ -44,9 +73,22 @@ Em **Configurações → Controles → Arena**, clique na tecla para alterá-la;
 preferências ficam neste dispositivo. Cada ataque tem sua própria recarga.
 Os ataques miram o rival mais próximo: disparo, rajada, investida e explosão.
 
+Use **Dash** ou **Espaço** para avançar na direção do movimento (parado, segue
+a direção em que o Pokémon está virado). Pokémon mais rápidos avançam mais,
+com maior velocidade e menor recarga. O botão mostra quando o dash está pronto.
+O alcance e a recarga aparecem na preparação da Arena.
+
 Maçãs aparecem durante a luta e recuperam **25% do HP** de quem as pega,
-incluindo os rivais. Uma dupla perde quando os dois Pokémon caem. Cada rodada
-começa com HP completo. Após 90 segundos começa a prorrogação com perda de HP;
+incluindo os rivais.
+Você começa o campeonato sem maçãs guardadas. Ao pegar uma, além da cura,
+guarda **uma maçã** para lançar ao parceiro com **E** ou **Maçã**. Ela segue o
+aliado e recupera **25% do HP**, sem reviver nem gerar outra maçã. A reserva
+comporta uma maçã e continua entre rodadas do mesmo campeonato; não vai para
+o próximo campeonato. Dash e lançamento têm teclas configuráveis em Controles.
+
+Uma dupla perde quando os dois Pokémon caem. Cada rodada
+começa com HP completo. Após 90 segundos (120 contra chefes) começa a prorrogação
+com perda da mesma porcentagem de HP para todos;
 um empate permite repetir a batalha. Participar do campeonato é grátis.
 Em **Aprender e equipar poderes**, compre ataques por **150 moedas** para o
 Pokémon escolhido e configure as quatro teclas antes de começar. As compras
@@ -57,8 +99,10 @@ sem compartilhar moedas ou compras com o anfitrião. O treinamento da Arena
 aplicativo aberto; ao sair, a sala é encerrada.
 
 Os rivais têm tempo de reação e usam um ataque por vez, dividindo os alvos
-entre os integrantes da sua dupla. As quartas são mais acessíveis; o dano,
-ritmo e velocidade dos disparos aumentam na semifinal e na final. Há uma
+entre os integrantes da sua dupla. A dificuldade cresce ao subir a torre.
+Subchefes e chefe alternam o alvo e têm golpes especiais com círculos no chão:
+saia deles antes da explosão. Eles têm mais HP e sprites maiores; a barra de
+vida do chefe também aparece no topo. Há uma
 breve proteção de 0,22 s entre golpes para evitar dano concentrado instantâneo.
 As vantagens e resistências de tipo são moderadas nas primeiras rodadas.
 A primeira maçã cai após 5 segundos; as seguintes aparecem a cada 6–9 segundos.

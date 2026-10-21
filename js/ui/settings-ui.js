@@ -92,9 +92,9 @@ G.SettingsUI = (() => {
            : iosTip() ? `<div class="set-row"><div class="grow"><b>Pantalla completa</b><small>${esc(IOS_TIP)}</small></div></div>` : '');
     } else if (tab === 'ctl') {
       const pn = G.Pad.name;
-      box.innerHTML = section('Arena 2 × 2', 'Ataques manuais: clique ou toque nos quatro botões no canto inferior direito. Teclado numérico 1–4 por padrão; funciona também com Num Lock desligado. Clique no atalho abaixo para trocar. Esc cancela.')
-        + G.ArenaUI.keys().map((code, i) => `<div class="set-row"><b>Ataque ${i + 1}</b><button class="btn small" data-arena-key="${i}">${esc(G.ArenaUI.keyLabel(code))}</button></div>`).join('')
-        + '<button class="btn small" id="arena-keys-reset">Restaurar Num 1–4</button><p id="arena-key-status" role="status"></p>'
+      box.innerHTML = section('Survivor, Arena e Rogue', 'Ataques da Arena: Num 1–4. Nos três modos: Dash com Espaço e lançar maçã com E, ou os botões na tela. As teclas de dash e maçã são compartilhadas. Clique no atalho abaixo para trocar. Esc cancela.')
+        + G.ArenaUI.controlKeys().map((code, i) => `<div class="set-row"><b>${i < 4 ? 'Ataque ' + (i + 1) : i === 4 ? 'Dash' : 'Lançar maçã'}</b><button class="btn small" data-arena-key="${i}">${esc(G.ArenaUI.keyLabel(code))}</button></div>`).join('')
+        + '<button class="btn small" id="arena-keys-reset">Restaurar controles da Arena</button><p id="arena-key-status" role="status"></p>'
         + section('Con mando', pn
           ? 'Mando conectado: <b translate="no">' + esc(pn.replace(/\s*\(.*$/, '')) + '</b>'
           : 'Xbox, PlayStation, Switch y la mayoría de mandos USB o Bluetooth. Conéctalo y pulsa cualquier botón.')
@@ -150,20 +150,20 @@ G.SettingsUI = (() => {
 
   function wire(box) {
     const reset = $('arena-keys-reset');
-    if (reset) reset.onclick = () => { G.Settings.set('arenaKeys', G.ArenaUI.defaults.slice()); render(); };
+    if (reset) reset.onclick = () => { G.ArenaUI.setControlKeys([...G.ArenaUI.defaults, 'Space', 'KeyE']); render(); };
     box.querySelectorAll('[data-arena-key]').forEach(b => {
       b.onclick = () => {
         if (cancelArenaKey) cancelArenaKey();
-        $('arena-key-status').textContent = 'Aperte a nova tecla para o ataque ' + (Number(b.dataset.arenaKey) + 1) + '.';
+        $('arena-key-status').textContent = 'Aperte a nova tecla para ' + (Number(b.dataset.arenaKey) < 4 ? 'o ataque ' + (Number(b.dataset.arenaKey) + 1) : Number(b.dataset.arenaKey) === 4 ? 'o dash' : 'lançar maçã') + '.';
         const listen = e => {
           e.preventDefault(); e.stopImmediatePropagation();
           if (e.code === 'Escape') { cancelArenaKey(); $('arena-key-status').textContent = 'Alteração cancelada.'; return; }
-          if (e.repeat || e.ctrlKey || e.altKey || e.metaKey || !/^(Key[A-Z]|Digit[0-9]|Numpad[0-9]|Space|Enter|Backspace|ShiftLeft|ShiftRight)$/.test(e.code) || /^(Key[WASDP]|Space)$/.test(e.code)) {
-            $('arena-key-status').textContent = 'Escolha outra tecla. WASD, P, espaço e setas ficam reservados aos controles.'; return;
+          if (e.repeat || e.ctrlKey || e.altKey || e.metaKey || !/^(Key[A-Z]|Digit[0-9]|Numpad[0-9]|Space|Enter|Backspace|ShiftLeft|ShiftRight)$/.test(e.code) || /^Key[WASDP]$/.test(e.code)) {
+            $('arena-key-status').textContent = 'Escolha outra tecla. WASD, P e setas ficam reservados aos controles.'; return;
           }
-          const keys = G.ArenaUI.keys().slice(), i = Number(b.dataset.arenaKey), other = keys.indexOf(e.code);
+          const keys = G.ArenaUI.controlKeys(), i = Number(b.dataset.arenaKey), other = keys.indexOf(e.code);
           if (other >= 0) keys[other] = keys[i]; keys[i] = e.code;
-          cancelArenaKey(); G.Settings.set('arenaKeys', keys); render();
+          cancelArenaKey(); G.ArenaUI.setControlKeys(keys); render();
         };
         cancelArenaKey = () => { removeEventListener('keydown', listen, true); cancelArenaKey = null; };
         addEventListener('keydown', listen, true);

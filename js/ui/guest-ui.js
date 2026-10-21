@@ -102,15 +102,19 @@
     try { $('room-name').value = localStorage.getItem('ps.roomName') || ''; } catch { /* unavailable */ }
     $('room-code').value = pendingCode; serverInfo();
   }
-  async function open() {
-    if (G.Social.room) { G.LobbyUI.open(); return; }
+  async function open(mode) {
+    if (G.Social.room?.mode === 'arena') { G.UI.toast('Saia da sala da Arena antes de entrar no Rogue.'); return; }
+    if (G.Social.room) {
+      if (mode === 'rogue' && G.Social.room.isHost && !G.Social.room.run) await G.Social.setSlots(G.Social.room.slots, 'rogue');
+      G.LobbyUI.open(); return;
+    }
     if (pendingCode) { openJoin(); return; }
     if (busy) return;
     const name = String(G.DB.user || 'Jogador').replace(/[^\p{L}\p{N}_ -]/gu, '').slice(0, 20);
     G.Social.setName(name.length >= 2 ? name : 'Jogador');
     busy = true;
     try {
-      const r = await G.Social.createRoom();
+      const r = await G.Social.createRoom({ mode });
       if (!r.ok) { openJoin(); $('room-create').classList.remove('hidden'); notice(r.error, true); return; }
       G.LobbyUI.open();
     } finally { busy = false; if (G.Social.room) render(); }
@@ -196,6 +200,9 @@
   }
   function render() {
     const room = G.Social.room; if (!room) return;
+    $('lobby-mode').value = room.mode === 'rogue' ? 'rogue' : 'survival';
+    $('lobby-mode').disabled = !room.isHost || !!room.run;
+    $('lobby-rogue-note').classList.toggle('hidden', room.mode !== 'rogue');
     $('lobby-menu').classList.toggle('hidden', !G.DB.save.partner || !!room.run);
     $('lobby-choose').classList.toggle('hidden', !room.open || !!room.run);
     $('lobby-join-form').classList.toggle('hidden', !!room.run);
@@ -276,7 +283,7 @@
       if (!r.ok) { G.UI.toast(r.error); return; }
       const current = G.Social.room;
       if (!current?.run) return;
-      const cfg = { k: 'start', seed: current.run.seed, runId: current.run.id, host: current.host, bots: current.bots, members: current.members.map(m => ({ ...m })) };
+      const cfg = { k: 'start', mode: current.run.mode || current.mode, seed: current.run.seed, runId: current.run.id, host: current.host, bots: current.bots, members: current.members.map(m => ({ ...m })) };
       G.Net.broadcast(cfg); G.Flow.startCoop(cfg);
     } catch (e) { G.UI.toast(e.message); }
     finally { busy = false; if (G.UI.isOpen('scr-lobby')) render(); }
@@ -298,6 +305,7 @@
     hasInvite() { return !!pendingCode; },
     consumeInvite() { if (pendingCode && !G.Social.room) open(); },
     init() {
+      $('lobby-mode').onchange = async () => { const room = G.Social.room; if (!room?.isHost || room.run) return; const r = await G.Social.setSlots(room.slots, $('lobby-mode').value); if (!r.ok) { G.UI.toast(r.error); render(); } };
       $('lobby-title').textContent = G.T('Jugar');
       pendingCode = normalizeCode(new URLSearchParams(location.hash.slice(1)).get('sala'));
       $('room-form').onsubmit = e => { e.preventDefault(); enter(true); };

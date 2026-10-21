@@ -109,6 +109,12 @@ G.Tiles = (() => {
                 leaf: '#3e3633', trunk: '#2a2321', flowers: ['#8a7f76', '#e8a82a', '#5a514c'], grass: '#5e544c', rock: '#6a625c',
                 pools: 0, pillars: 0.03, props: { tree: 0.012, rock: 0.02 }, weather: null, clear: 4.5 }
   };
+  for (const [id, name, floor, wall, glow] of [
+    ['cave1', 'Caverna do Musgo', '#394846', '#222d32', '#84d9ba'],
+    ['cave2', 'Gruta dos Cristais', '#383c59', '#232438', '#b599ff'],
+    ['cave3', 'Abismo das Brasas', '#4e3735', '#2e2229', '#ffb16c']
+  ]) ARENA_THEMES[id] = { ...ARENA_THEMES.rock, name, floor, wall, leaf: glow, liq: glow, foam: glow,
+    prop: 'crystal', rock: wall, trunk: wall, grass: floor, flowers: [glow, wall, floor], pools: 0, pillars: 0.014, props: { tree: id === 'cave2' ? 0.012 : 0, rock: 0.014 }, weather: null, clear: 4 };
   const ARENA_TYPES = Object.keys(ARENA_THEMES);
 
   /** Aclara (k>0) u oscurece (k<0) un color. */
@@ -133,7 +139,7 @@ G.Tiles = (() => {
       grass: [shade(th.grass, -0.28), th.grass, shade(th.grass, 0.28)]
     };
   }
-  for (const t of ARENA_TYPES) BIOMES.push(arenaBiome(ARENA_THEMES[t]));
+  for (const t of ARENA_TYPES) { const b = arenaBiome(ARENA_THEMES[t]); if (t.startsWith('cave')) b.name = ARENA_THEMES[t].name; BIOMES.push(b); }
   BIOMES[ARENA + ARENA_TYPES.indexOf('judgment')].name = ARENA_THEMES.judgment.name;
 
   // ---------------- utilidades de color / píxel ----------------

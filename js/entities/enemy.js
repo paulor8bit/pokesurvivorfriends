@@ -105,6 +105,10 @@
     cy() { return this.y; }
 
     /** Lo convierte en shiny: otro sprite, más aguante y mucha más XP. */
+    setScale(scale) {
+      this.scale = G.U.clamp(scale, 0.5, 3); this.anim = new G.Sprites.Animator(this.dex, this.scale, !!this.shiny);
+      this.r = G.Sprites.bodyRadius(this.dex, this.scale); this.bodyH = G.Sprites.bodyHeight(this.dex, this.scale);
+    }
     makeShiny() {
       this.shiny = true;
       this.anim = new G.Sprites.Animator(this.dex, this.scale, true);
@@ -813,6 +817,8 @@
       const e = new Enemy(def, o.x, o.y, { hp: 1, spd: 1, dmg: 1 }, o.boss);
       e.id = o.id;
       e.remote = true;
+      if (Number.isFinite(o.scale)) e.setScale(o.scale);
+      if (['mini', 'major'].includes(o.rank)) { e.rogueRank = o.rank; e.name = (o.rank === 'major' ? 'Chefe · ' : 'Subchefe · ') + e.name; }
       if (o.shiny) e.makeShiny();
       e.maxHp = o.hp; e.hp = o.hp;
       e.net = { x: o.x, y: o.y, vx: 0, vy: 0, age: 0, dir: 0, anim: 0, st: 0 };
@@ -977,7 +983,7 @@
           if (G.Coop.isHost) G.Coop.enemyGone(e, false);
           continue;
         }
-        if (e.boss || e.shiny || G.Rift.inArena) continue;
+        if (e.boss || e.shiny || G.Rift.inArena || G.Rogue?.active) continue;
         // Rezagados: los que se quedan atrás mientras corres y llevan un rato
         // FUERA DE LA VISTA (de todos) vuelven a salir por delante de ti. Así
         // no se puede huir sin más, y nunca desaparece uno que estés viendo.

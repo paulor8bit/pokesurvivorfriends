@@ -979,6 +979,30 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 #arena-status { margin-left: 16px; color: #d1e3ec; }
 .arena-bracket { position: absolute; z-index: 4; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(850px, 94vw); max-height: 80dvh; overflow: auto; padding: 22px; border: 1px solid #427082; border-radius: 18px; background: rgba(9, 24, 39, .97); text-align: center; box-shadow: 0 20px 90px #030a14; }
 .arena-bracket h2 { margin: 0 0 18px; color: #ffe29a; }
+.arena-ladder { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.arena-rung { display: flex; flex-direction: column; justify-content: space-between; align-items: center; padding: 10px 5px; border: 1px solid #354e65; border-radius: 10px; background: #112236; min-width: 0; }
+.arena-rung b { color: #bbd0df; font-size: 15px; }
+.arena-rung span { font-size: 13px; }
+.arena-rung small { color: #a9c5d3; font-size: 12px; margin-top: 5px; }
+.arena-rung-mons { display: flex; justify-content: center; }
+.arena-rung canvas { width: min(76px, 8vw); height: auto; image-rendering: pixelated; }
+.arena-rung.current { border-color: #ffdc89; box-shadow: 0 0 15px #ffc66d30; background: #3b3026; }
+.arena-rung.won { border-color: #63dba4; background: #18372f; }
+.arena-rung.lost { border-color: #ff7183; background: #3e2230; }
+.arena-rung.mini b { color: #d4b1ff; }
+.arena-rung.boss b { color: #ffcb72; }
+.arena-boss { position: absolute; top: 65px; left: 50%; transform: translateX(-50%); width: min(420px, 60vw); text-align: center; color: #ffdb99; pointer-events: none; background: #091827dc; border-radius: 10px; padding: 5px 12px; }
+.arena-boss meter { display: block; width: 100%; height: 18px; accent-color: #ce82ed; }
+.arena-boss small { display: block; font-size: 12px; }
+#scr-arena:has(.arena-boss:not(.hidden)) #arena-notice { top: 140px; }
+@media (max-width: 700px), (max-height: 500px) {
+  .arena-ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .arena-rung { padding: 6px; }
+  .arena-rung canvas { width: 52px; }
+  .arena-boss { top: 46px; width: 45vw; font-size: 13px; padding: 3px 8px; }
+  #scr-arena:has(.arena-boss:not(.hidden)) #arena-notice { top: 110px; }
+  #arena-status { font-size: 12px; }
+}
 .arena-rounds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: center; text-align: left; }
 .arena-round h3 { color: #86cdd6; margin: 0 0 8px; }
 .arena-match { border: 1px solid #354e65; border-radius: 8px; margin-bottom: 10px; overflow: hidden; }
@@ -989,12 +1013,35 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .arena-attacks { position: absolute; bottom: max(14px, env(safe-area-inset-bottom)); right: max(16px, env(safe-area-inset-right)); display: grid; grid-template-columns: repeat(2, 135px); gap: 9px; }
 .arena-attacks button { position: relative; min-height: 70px; padding: 9px 8px 7px; border: 1px solid var(--attack-color, #7cbfd0); border-radius: 12px; background: rgba(9, 24, 39, .92); color: #fff; font: inherit; cursor: pointer; touch-action: none; }
 .arena-attacks button:disabled { opacity: .6; cursor: default; }
+#survivor-actions { position: fixed; z-index: 15; right: max(12px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 8px; width: 115px; }
+#survivor-actions button { min-height: 58px; padding: 5px; border: 1px solid #7bdcff; border-radius: 10px; color: #fff; background: #0b2034ed; font: inherit; touch-action: none; }
+#survivor-actions button:last-child { border-color: #87ff9d; }
+#survivor-actions button:disabled { opacity: .55; }
+#rogue-hud { position: fixed; z-index: 14; top: 105px; left: 50%; transform: translateX(-50%); width: min(570px, 74vw); pointer-events: none; text-align: center; }
+#rogue-status { display: inline-block; padding: 8px 12px; border: 1px solid #b599ff; border-radius: 9px; background: #101625df; color: #e5dcff; font-size: 13px; white-space: pre-line; }
+#rogue-boons { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; pointer-events: auto; }
+#rogue-boons:empty { display: none; }
+#rogue-boons p { width: 100%; padding: 7px; margin: 0; border-radius: 7px; background: #101625ef; color: #ffe2a1; }
+.rogue-boon { flex: 1; min-width: 135px; max-width: 180px; display: flex; flex-direction: column; align-items: center; gap: 5px; white-space: normal; background: #192238f2; }
+.rogue-boon small { color: #bddbd5; font-size: 12px; }
+@media (max-height: 500px) { #rogue-hud { top: 86px; } #rogue-status { padding: 3px 7px; font-size: 11px; } #rogue-boons { margin-top: 10px; } .rogue-boon { padding: 6px; min-width: 110px; } }
+#survivor-actions kbd { display: block; font-size: 10px; color: #b5d5e8; }
+#survivor-actions b { display: block; font-size: 15px; }
+#survivor-actions small { display: block; font-size: 11px; color: #87ff9d; }
+@media (max-width: 600px) { #survivor-actions { width: 95px; bottom: 90px; } }
 .arena-attacks button:not(:disabled):active { background: #365e66; transform: scale(.96); }
 .arena-attacks b { display: block; font-size: 15px; margin-top: 11px; }
 .arena-attacks kbd { position: absolute; left: 7px; top: 4px; font-size: 11px; color: #b2d7e9; }
 .arena-attacks small { display: block; margin-top: 3px; font-size: 12px; color: var(--attack-color); }
 #arena-stick { position: absolute; left: max(22px, env(safe-area-inset-left)); bottom: max(25px, env(safe-area-inset-bottom)); width: 104px; height: 104px; border: 2px solid #6bd7dd66; background: #0d273e99; border-radius: 50%; display: grid; place-items: center; touch-action: none; color: #b8f2f3; font-size: 38px; user-select: none; }
 #arena-notice { position: absolute; top: 68px; left: 15%; right: 15%; text-align: center; color: #ffe29a; text-shadow: 0 2px #000; pointer-events: none; }
+#survivor-actions .sprite-action, .arena-attacks .sprite-action { position: relative; padding: 5px 5px 6px; }
+#survivor-actions .action-sprite, .arena-attacks .action-sprite { position: static; display: flex; justify-content: center; align-items: center; height: 48px; margin: 0; font-style: normal; pointer-events: none; }
+#survivor-actions .action-sprite img, .arena-attacks .action-sprite img { display: block; width: 48px; height: 48px; image-rendering: pixelated; filter: drop-shadow(0 2px 0 #04101e); }
+#survivor-actions .sprite-action kbd, .arena-attacks .sprite-action kbd { position: absolute; top: 4px; left: 5px; padding: 1px 3px; border: 1px solid #6d9db6; border-radius: 4px; background: #0a2032e6; }
+#survivor-actions .sprite-action b, .arena-attacks .sprite-action b { margin-top: 0; }
+#survivor-actions .sprite-action small, .arena-attacks .sprite-action small { line-height: 1.1; }
+#survivor-actions .sprite-action:disabled .action-sprite, .arena-attacks .sprite-action:disabled .action-sprite { filter: saturate(.55); }
 @media (max-width: 700px), (max-height: 500px) {
   .arena-top b { font-size: 17px; }
   #arena-status { font-size: 13px; margin-left: 9px; }
@@ -1002,6 +1049,8 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   .arena-attacks button { min-height: 51px; padding: 3px 5px; }
   .arena-attacks b { font-size: 12px; margin-top: 14px; }
   .arena-attacks small { font-size: 10px; margin-top: 0; }
+  #survivor-actions .action-sprite, .arena-attacks .action-sprite { height: 36px; }
+  #survivor-actions .action-sprite img, .arena-attacks .action-sprite img { width: 36px; height: 36px; }
   #arena-stick { width: 80px; height: 80px; left: 15px; bottom: 18px; }
   .arena-bracket { padding: 12px; max-height: 76dvh; }
   .arena-bracket h2 { font-size: 20px; margin-bottom: 8px; }

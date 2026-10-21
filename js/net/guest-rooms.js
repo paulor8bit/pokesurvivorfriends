@@ -109,12 +109,12 @@
   G.DB.onLeave(stop);
   G.Social = {
     guestRooms: true, MAX_PLAYERS: 4,
-    setName, createRoom(options = {}) { setServer(location.origin); choice = options.choice || null; return enter('create', { mode: options.mode === 'arena' ? 'arena' : 'survival' }); },
+    setName, createRoom(options = {}) { setServer(location.origin); choice = options.choice || null; return enter('create', { mode: ['arena', 'rogue'].includes(options.mode) ? options.mode : 'survival' }); },
     joinRoom: code => enter('join', { code }), leaveRoom, stop, setServer, choosePokemon,
     roomCatalog: code => request('catalog', { code }), catalog,
     get serverBase() { return serverBase; }, get choice() { return choice; },
     async setOpen(open) { return request('open', { open }); },
-    setSlots: slots => request('slots', { slots }), startRun: seed => request('start', { seed }), finishRun: () => request('finish'),
+    setSlots: (slots, mode) => request('slots', { slots, ...(mode ? { mode } : {}) }), startRun: seed => request('start', { seed }), finishRun: () => request('finish'),
     refreshMember() { if (room?.open && !room.run) request('member', { member: member(), ...(room.isHost ? { catalog: catalog() } : {}) }).catch(() => {}); },
     sendPeer(to, payload) { if (ws?.readyState === WebSocket.OPEN && ws.bufferedAmount < 2 * 1024 * 1024) ws.send(JSON.stringify({ k: 'peer', to, payload })); },
     onSignal(fn) { signals.add(fn); }, offSignal(fn) { signals.delete(fn); },

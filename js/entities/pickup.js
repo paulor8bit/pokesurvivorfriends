@@ -123,6 +123,7 @@ G.Pickups = (() => {
       let pl = null, d2 = Infinity;
       for (const o of players) {
         if (o.dead && players.length > 1) continue;
+        if (p.kind === 'heal' && !G.SurvivorActions.canCollect(o)) continue;
         const dd = G.U.dist2(o.x, o.y, p.x, p.y);
         if (dd < d2) { d2 = dd; pl = o; }
       }

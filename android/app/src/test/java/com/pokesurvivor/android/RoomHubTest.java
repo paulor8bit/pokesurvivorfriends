@@ -76,4 +76,15 @@ public class RoomHubTest {
         assertTrue(guests[3].rpc("join", "code", id, "member", mon()).getBoolean("ok"));
         assertTrue(host.rpc("finish").getBoolean("ok"));
     }
+    @Test public void rogueModeAndHostRights() throws Exception {
+        Player host = new Player(), guest = new Player();
+        JSONObject room = host.rpc("create", "member", mon(), "mode", "rogue").getJSONObject("room");
+        assertEquals("rogue", room.getString("mode"));
+        guest.rpc("join", "code", room.getString("id"), "member", mon());
+        assertFalse(guest.rpc("slots", "slots", new JSONArray(), "mode", "survival").getBoolean("ok"));
+        assertTrue(host.rpc("slots", "slots", new JSONArray(), "mode", "survival").getBoolean("ok"));
+        host.rpc("slots", "slots", new JSONArray(), "mode", "rogue");
+        assertEquals("rogue", host.rpc("start", "seed", 7).getJSONObject("room").getJSONObject("run").getString("mode"));
+        assertFalse(host.rpc("slots", "slots", new JSONArray(), "mode", "survival").getBoolean("ok"));
+    }
 }

@@ -45,6 +45,10 @@ G.Icons = (() => {
     boot: { pal: { b: '#4fb4ff', d: '#2a6fb0', w: '#e6f4ff', g: '#e8e8f0' }, rows: [
       '............', '....kkkk....', '....kbbk....', '....kbbk....', '....kbbk....', '....kbbbkk..',
       '...kbwbbbbk.', '..kbbbbbbbbk', '..kdddddddbk', '..kgggggggk.', '...kkkkkkk..', '............'] },
+    dash: { pal: { b: '#56caff', d: '#2679bd', w: '#e6faff', g: '#b3eaff', s: '#69dfef' }, rows: [
+      '................', '.........kkkk...', '..ssss...kbbk...', '.....ss..kbwk...', '.........kbwk...',
+      '.ssssss..kbbk...', '.........kbbbkk.', '....sss.kbwbbbbk', '.......kbbbbbbbk', '..ssss.kdddddddk',
+      '.......kgggggggk', '........kkkkkkk.', '...ssss.........', '................', '................', '................'] },
     // Vínculo (premio de los legendarios): dos eslabones enlazados.
     bond: { pal: { y: '#ffd23f', w: '#fff3b0', p: '#ff8ad8', q: '#ffd3f1' }, rows: [
       '.kkkkk......', 'kwyyyyk.....', 'kykkkyk.....', 'kyk.kyk.....', 'kykkkyk.....', 'kyyyyykkkkk.',

@@ -110,7 +110,7 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
             let id; do { id = randomBytes(6).toString('hex').toUpperCase(); } while (rooms.has(id));
             info.slot = 0;
             const catalog = catalogOf(m.catalog);
-            const next = { id, host: client.uid, mode: m.mode === 'arena' ? 'arena' : 'survival', open: true, catalog, slots: slotsOf(m.slots, catalog), run: null, members: new Map([[client.uid, info]]) };
+            const next = { id, host: client.uid, mode: ['arena', 'rogue'].includes(m.mode) ? m.mode : 'survival', open: true, catalog, slots: slotsOf(m.slots, catalog), run: null, members: new Map([[client.uid, info]]) };
             client.room = id; rooms.set(id, next); reply({ ok: true, room: view(next) }); break;
           }
           case 'join': {
@@ -140,16 +140,17 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
           }
           case 'slots': {
             if (!room || room.host !== client.uid) throw new Error('Sólo el anfitrión puede cambiar los huecos.');
+            if (m.mode !== undefined && (room.run || room.mode === 'arena' || !['survival', 'rogue'].includes(m.mode))) throw new Error('O modo só pode mudar antes da partida.');
             const next = slotsOf(m.slots, room.catalog);
             for (const info of room.members.values()) if (info.slot && next[info.slot - 1].kind === 'bot' && JSON.stringify(next[info.slot - 1]) !== JSON.stringify(room.slots[info.slot - 1])) throw new Error('Ese hueco está ocupado por un jugador.');
-            room.slots = next; broadcast(room); reply({ ok: true }); break;
+            room.slots = next; if (m.mode !== undefined) room.mode = m.mode; broadcast(room); reply({ ok: true }); break;
           }
           case 'start': {
             if (!room || room.host !== client.uid) throw new Error('Sólo el anfitrión puede empezar.');
             if (room.run) throw new Error('La partida ya está en marcha.');
             const seed = Number(m.seed);
             if (!Number.isInteger(seed) || seed < 0 || seed > 0x7fffffff) throw new Error('Mensaje inválido.');
-            room.run = { id: randomBytes(8).toString('hex'), seed }; room.open = room.mode !== 'arena';
+            room.run = { id: randomBytes(8).toString('hex'), seed, mode: room.mode }; room.open = room.mode !== 'arena';
             broadcast(room); reply({ ok: true, room: view(room) }); break;
           }
           case 'finish': {

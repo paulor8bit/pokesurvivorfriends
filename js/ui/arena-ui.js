@@ -4,7 +4,18 @@ G.ArenaUI = (() => {
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const R = G.ArenaRules, defaults = ['Numpad1', 'Numpad2', 'Numpad3', 'Numpad4'];
   const keys = () => { const v = G.Settings.get('arenaKeys'); return Array.isArray(v) && v.length === 4 && v.every(k => typeof k === 'string') ? v : defaults.slice(); };
-  const label = code => code.replace('Numpad', 'Num ').replace('Digit', '').replace('Key', '').replace('Arrow', '');
+  const label = code => code === 'Space' ? 'Espaço' : code.replace('Numpad', 'Num ').replace('Digit', '').replace('Key', '').replace('Arrow', '');
+  function controlKeys() {
+    const list = keys().slice();
+    for (const [setting, fallback] of [['arenaDashKey', 'Space'], ['arenaAppleKey', 'KeyE']]) {
+      const saved = G.Settings.get(setting), preferred = typeof saved === 'string' ? saved : fallback;
+      list.push(!list.includes(preferred) ? preferred : [fallback, 'KeyF', 'Numpad0', 'ShiftLeft'].find(k => !list.includes(k)));
+    }
+    return list;
+  }
+  function setControlKeys(list) {
+    G.Settings.set('arenaKeys', list.slice(0, 4)); G.Settings.set('arenaDashKey', list[4]); G.Settings.set('arenaAppleKey', list[5]);
+  }
   let visible = false, engine = null, state = null, humanId = '0:0', guest = false, roomId = null;
   let config = { dex: 0, bot: 7, mode: 'bot', name: '' }, held = new Set(), touch = { x: 0, y: 0 }, attacks = [];
   let last = 0, sendAt = 0, lastFrame = 0, readyAt = 0, panelAt = 0, phase = '', anims = new Map(), initialized = false, busy = false;
@@ -14,7 +25,7 @@ G.ArenaUI = (() => {
   function movesFor(dex, ids = powers.defaults(dex)) { return powers.moves(dex, ids); }
   function spec(dex, name, human = false, ids) {
     const mon = G.DEX_BY[dex] || G.DEX_BY[25];
-    return { dex: mon.dex, name, types: mon.types, moves: movesFor(mon.dex, ids), human };
+    return { dex: mon.dex, name, types: mon.types, speed: mon.spd, moves: movesFor(mon.dex, ids), human };
   }
   function owned() { return [...new Set([...(Object.keys(G.DB.save?.owned || {}).map(Number)), ...G.STARTERS.map(m => m.dex)])].filter(d => G.DEX_BY[d]); }
   function options(value) { return owned().map(d => `<option value="${d}" ${d === value ? 'selected' : ''}>${esc(G.DEX_BY[d].name)}</option>`).join(''); }
@@ -31,18 +42,19 @@ G.ArenaUI = (() => {
   }
   function setup() {
     const room = G.Social.room, arenaRoom = room?.mode === 'arena';
-    $('scr-arena').innerHTML = `<div class="box arena-setup"><div class="arena-heading"><div><small>CAMPEONATO EM DUPLAS</small><h1>Arena 2 × 2</h1></div><button id="arena-back" class="btn">Voltar</button></div>
-      <p class="arena-intro">Oito duplas. Quartas, semifinal e final. Vença com seu Pokémon e um amigo ou bot.</p>
+    $('scr-arena').innerHTML = `<div class="box arena-setup"><div class="arena-heading"><div><small>TORRE DE LUTADORES</small><h1>Arena 2 × 2</h1></div><button id="arena-back" class="btn">Voltar</button></div>
+      <p class="arena-intro">Suba a torre de lutadores: quatro duplas rivais, dois subchefes e Mewtwo na luta final. Contra os chefes, sua dupla luta 2 contra 1.</p>
       <div class="arena-character-select"><div id="arena-portrait-player"></div><div class="arena-picker"><h2>ESCOLHA SEU POKÉMON</h2><div class="arena-player-tabs"><button id="arena-pick-player" class="btn small">P1 · Você</button><button id="arena-pick-bot" class="btn small">P2 · Bot</button></div><p id="arena-picker-hint" class="sub"></p><div id="arena-pokemon-grid" class="grid arena-pokemon-grid"></div></div><div id="arena-portrait-partner"></div></div>
       <div class="arena-fields"><label>Apelido<input id="arena-name" maxlength="20" value="${esc(config.name)}"></label>
       <label>Seu Pokémon<select id="arena-pokemon">${options(config.dex)}</select></label>
       <label>Sua dupla<select id="arena-partner"><option value="bot" ${config.mode === 'bot' ? 'selected' : ''}>Bot</option><option value="friend" ${config.mode === 'friend' ? 'selected' : ''}>Amigo por convite</option></select></label>
       <label>Pokémon do bot<select id="arena-bot">${options(config.bot)}</select></label></div>
       <div id="arena-preview" class="arena-preview"></div>
+      <p id="arena-mobility" class="sub"></p>
       <details id="arena-shop" class="arena-shop"><summary>Aprender e equipar poderes · <span id="arena-shop-coins"></span> moedas</summary>
         <label>Treinar<select id="arena-shop-target"><option value="dex">Seu Pokémon</option>${config.mode === 'bot' ? '<option value="bot">Parceiro bot</option>' : ''}</select></label>
         <div id="arena-shop-body"></div><p id="arena-shop-message" role="status"></p></details>
-      <p class="sub">Quatro ataques manuais, com recargas independentes. Mire no rival mais próximo. Mova com WASD, setas ou o controle de toque. Maçãs recuperam 25% do HP; os rivais também podem pegá-las.</p>
+      <p class="sub">Quatro ataques manuais, com recargas independentes. Mire no rival mais próximo. Mova com WASD, setas ou o controle de toque. Você começa sem maçã: ao coletar, recupera 25% do HP e guarda uma para lançar ao parceiro e curar 25% do HP dele. Os rivais também podem pegá-las.</p>
       <div class="row wrap"><button id="arena-start" class="btn gold">Começar com bot</button><button id="arena-create" class="btn">Criar convite</button><button id="arena-controls" class="btn">Configurar teclas</button></div>
       <div class="arena-invite"><label>Entrar com amigo: cole o convite ou código<input id="arena-invite" autocomplete="off" placeholder="Link da Arena ou código"></label><button id="arena-join" class="btn">Entrar</button></div>
       <div id="arena-room" class="arena-room"></div><p id="arena-message" role="status"></p></div>`;
@@ -75,6 +87,8 @@ G.ArenaUI = (() => {
   }
   function preview() {
     $('arena-preview').innerHTML = powers.moves(config.dex).map((m, i) => { const skill = R.skillFor(m, i); return `<div>${G.Icons.html('move:' + m.id, 24)}<b>${esc(G.T(m.name))}</b><small>${esc(skill.role)} · ${skill.damage} dano · ${skill.cooldown}s · ${esc(label(keys()[i]))}</small></div>`; }).join('');
+    const dash = R.dashFor(G.DEX_BY[config.dex].spd), controls = controlKeys();
+    $('arena-mobility').textContent = `Dash de ${G.DEX_BY[config.dex].name}: alcance ${dash.distance} · recarga ${dash.cooldown}s · ${label(controls[4])}. Lançar maçã ao parceiro: ${label(controls[5])}.`;
     const room = G.Social.room;
     const friend = room?.members.find(m => m.uid !== room.host);
     $('arena-bot').disabled = config.mode !== 'bot' || room?.mode === 'arena';
@@ -206,9 +220,13 @@ G.ArenaUI = (() => {
       if (room) { const result = await G.Social.startRun(Math.floor(Math.random() * 1000000)); if (!result.ok) throw Error(result.error); }
       guest = false; roomId = room?.id || null; humanId = '0:0';
       const friends = room ? room.members.map(m => spec(m.dex, m.name, true, m.uid === room.host ? powers.profile(m.dex).loadout : peerPowers.get(m.uid))) : [spec(config.dex, config.name || 'Você', true, powers.profile(config.dex).loadout), spec(config.bot, 'Parceiro bot', false, powers.profile(config.bot).loadout)];
-      const pool = G.DEX.filter(m => G.SPRITE_META[m.dex]);
+      const bossDex = new Set(R.ENCOUNTERS.filter(e => e.dex).map(e => e.dex));
+      const pool = G.DEX.filter(m => G.SPRITE_META[m.dex] && !bossDex.has(m.dex));
       const teams = [{ name: 'Sua dupla', fighters: friends }];
-      for (let i = 1; i < 8; i++) teams.push({ name: 'Dupla ' + i, fighters: [0, 1].map(() => { const m = G.U.pick(pool); return spec(m.dex, m.name); }) });
+      for (const fight of R.ENCOUNTERS) {
+        const fighters = fight.dex ? [spec(fight.dex, G.DEX_BY[fight.dex].name)] : [0, 1].map(() => { const m = G.U.pick(pool); return spec(m.dex, m.name); });
+        teams.push({ name: fight.title, fighters });
+      }
       engine = new R.Tournament(teams, Math.floor(Math.random() * 0xffffffff), (type, types) => G.Types.mult(type, types));
       state = engine.state; phase = ''; scene(); sendFrame();
     } catch (e) { message(e.message); } finally { busy = false; }
@@ -218,10 +236,13 @@ G.ArenaUI = (() => {
     $('scr-arena').innerHTML = `<canvas id="arena-canvas" aria-label="Campo de batalha da Arena"></canvas>
       <div class="arena-top"><div><b>Arena 2 × 2</b><span id="arena-status"></span></div><div><button id="arena-settings" class="btn small">Teclas</button><button id="arena-exit" class="btn small">Sair</button></div></div>
       <div id="arena-bracket" class="arena-bracket"></div><div id="arena-notice" role="status"></div>
+      <div id="arena-boss" class="arena-boss hidden"><b></b><meter min="0"></meter><small></small></div>
       <div id="arena-stick" aria-label="Arraste para mover"><span>＋</span></div><div id="arena-attacks" class="arena-attacks"></div>`;
     $('arena-settings').onclick = () => G.SettingsUI.open('ctl'); $('arena-exit').onclick = close;
     $('arena-attacks').innerHTML = R.SKILLS.map((s, i) => `<button data-arena-attack="${i}" aria-label="Ataque ${i + 1}"><i></i><kbd></kbd><b></b><small></small></button>`).join('');
-    $('arena-attacks').querySelectorAll('button').forEach(b => b.onpointerdown = e => { e.preventDefault(); attacks.push(Number(b.dataset.arenaAttack)); });
+    $('arena-attacks').insertAdjacentHTML('beforeend', `<button id="arena-dash" class="sprite-action" data-arena-action="4" aria-label="Dash"><i class="action-sprite">${G.Icons.html('dash', 48)}</i><kbd></kbd><b>Dash</b><small></small></button>
+      <button id="arena-apple" class="sprite-action" data-arena-action="5" aria-label="Lançar maçã ao parceiro"><i class="action-sprite">${G.Icons.html('berry', 48)}</i><kbd></kbd><b></b><small></small></button>`);
+    $('arena-attacks').querySelectorAll('button').forEach(b => b.onpointerdown = e => { e.preventDefault(); if (!b.disabled && attacks.length < 6) attacks.push(Number(b.dataset.arenaAttack ?? b.dataset.arenaAction)); });
     const stick = $('arena-stick'); let origin = null;
     stick.onpointerdown = e => { e.preventDefault(); origin = { id: e.pointerId, x: e.clientX, y: e.clientY }; stick.setPointerCapture(e.pointerId); };
     stick.onpointermove = e => { if (origin?.id !== e.pointerId) return; const x = (e.clientX - origin.x) / 38, y = (e.clientY - origin.y) / 38, d = Math.max(1, Math.hypot(x, y)); touch = { x: x / d, y: y / d }; };
@@ -231,22 +252,24 @@ G.ArenaUI = (() => {
   function bracket() {
     const s = state, box = $('arena-bracket');
     box.replaceChildren();
-    const title = document.createElement('h2'); title.textContent = s.phase === 'champion' ? 'Sua dupla é campeã!' : s.phase === 'eliminated' ? 'Sua dupla foi eliminada' : s.phase === 'draw' ? 'Empate! Vamos repetir a batalha.' : ['Quartas de final', 'Semifinal', 'Final'][s.round]; box.appendChild(title);
-    const rounds = document.createElement('div'); rounds.className = 'arena-rounds';
-    for (let r = 0; r < 3; r++) {
-      const col = document.createElement('div'); col.className = 'arena-round';
-      const h = document.createElement('h3'); h.textContent = ['Quartas', 'Semifinal', 'Final'][r]; col.appendChild(h);
-      for (const m of s.rounds[r] || Array.from({ length: 4 >> r }, () => ({ a: null, b: null, winner: null }))) {
-        const card = document.createElement('div'); card.className = 'arena-match';
-        for (const team of [m.a, m.b]) { const row = document.createElement('div'); row.textContent = team === null ? 'A definir' : s.teams[team].name;
-          if (team !== null) { const portraits = document.createElement('span'); portraits.className = 'arena-bracket-mons'; for (const f of s.teams[team].fighters) portraits.appendChild(G.UI.spriteCanvas(f.dex, 32, 28, { hero: true, scale: 1 })); row.prepend(portraits); }
-          if (team !== null) { row.title = s.teams[team].fighters.map(f => G.DEX_BY[f.dex].name).join(' + '); if (m.winner === team) row.classList.add('winner'); if (team === 0) row.classList.add('your-team'); } card.appendChild(row); }
-        col.appendChild(card);
-      }
-      rounds.appendChild(col);
+    const title = document.createElement('h2'); title.textContent = s.phase === 'champion' ? 'Torre conquistada! Sua dupla é campeã!' : s.phase === 'eliminated' ? 'K.O. · Fim da jornada' : s.phase === 'draw' ? 'Duplo K.O.! Vamos repetir a luta.' : s.round > 0 ? 'Vitória! Próximo desafio' : 'Torre de lutadores'; box.appendChild(title);
+    const rounds = document.createElement('div'); rounds.className = 'arena-ladder';
+    for (let r = 0; r < R.ENCOUNTERS.length; r++) {
+      const fight = R.encounter(r), m = s.rounds[r][0], team = s.teams[r + 1];
+      const card = document.createElement('div'); card.className = 'arena-rung ' + fight.kind;
+      if (m.winner === 0) card.classList.add('won');
+      else if (m.winner !== null) card.classList.add('lost');
+      else if (r === s.round) { card.classList.add('current'); card.setAttribute('aria-current', 'step'); }
+      const h = document.createElement('b'); h.textContent = (r + 1) + ' · ' + fight.title; card.appendChild(h);
+      const portraits = document.createElement('div'); portraits.className = 'arena-rung-mons';
+      for (const f of team.fighters) portraits.appendChild(G.UI.spriteCanvas(f.dex, 76, 64, { hero: true, scale: 2 }));
+      card.appendChild(portraits);
+      const names = document.createElement('span'); names.textContent = team.fighters.map(f => G.DEX_BY[f.dex].name).join(' + '); card.appendChild(names);
+      const detail = document.createElement('small'); detail.textContent = (fight.kind === 'duo' ? '2 contra 2' : '2 contra 1 · ' + fight.hp + ' HP') + ' · ' + (m.winner === 0 ? 'Vencido' : m.winner !== null ? 'Derrota' : r === s.round ? 'Próxima luta' : 'A seguir'); card.appendChild(detail);
+      rounds.appendChild(card);
     }
     box.appendChild(rounds);
-    const p = document.createElement('p'); p.textContent = s.champion !== null ? 'Campeã: ' + s.teams[s.champion].name : 'Cada rodada começa com HP cheio e as quatro recargas prontas. As outras chaves são simuladas.'; box.appendChild(p);
+    const p = document.createElement('p'); p.textContent = s.champion === 0 ? 'Sete desafios vencidos, incluindo o chefe final!' : 'Sua dupla enfrenta todos os desafios em sequência. HP e recargas são restaurados a cada luta. Desvie dos círculos de ataque dos chefes!'; box.appendChild(p);
     if (!guest && ['bracket', 'draw'].includes(s.phase)) { const b = document.createElement('button'); b.id = 'arena-next'; b.className = 'btn gold'; b.textContent = s.phase === 'draw' ? 'Repetir batalha' : 'Entrar na batalha'; b.onclick = () => { if (s.phase === 'draw') engine.rematch(); else engine.begin(); renderPanel(); sendFrame(); }; box.appendChild(b); }
     else if (guest && s.phase === 'bracket') { const p = document.createElement('p'); p.textContent = 'Aguardando o anfitrião iniciar a rodada.'; box.appendChild(p); }
     if (['champion', 'eliminated'].includes(s.phase)) { const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Voltar ao menu'; b.onclick = close; box.appendChild(b); }
@@ -257,15 +280,31 @@ G.ArenaUI = (() => {
     $('arena-bracket').classList.toggle('hidden', battle); $('arena-stick').classList.toggle('hidden', !battle); $('arena-attacks').classList.toggle('hidden', !battle);
     if (phase !== state.phase + state.round) { phase = state.phase + state.round; if (!battle) bracket(); }
     const fighter = state.fighters.find(f => f.id === humanId);
-    $('arena-status').textContent = ['Quartas', 'Semifinal', 'Final'][Math.min(state.round, 2)] + (battle ? ' · ' + Math.ceil(Math.max(0, 90 - state.time)) + 's' : '');
-    $('arena-notice').textContent = guest && performance.now() - lastFrame > 2500 ? 'Aguardando conexão com o anfitrião…' : battle && fighter?.hp <= 0 ? 'Você caiu. Sua dupla ainda pode vencer!' : battle && state.time > 90 ? 'Prorrogação: todos perdem HP até restar uma dupla.' : '';
+    const fight = R.encounter(state.round), boss = state.fighters.find(f => ['mini', 'boss'].includes(f.rank));
+    $('arena-status').textContent = `${state.round + 1}/7 · ${fight.title} · ${fight.kind === 'duo' ? '2 × 2' : '2 × 1'}` + (battle ? ' · ' + Math.ceil(Math.max(0, fight.limit - state.time)) + 's' : '');
+    $('arena-notice').textContent = guest && performance.now() - lastFrame > 2500 ? 'Aguardando conexão com o anfitrião…' : battle && fighter?.hp <= 0 ? 'Você caiu. Sua dupla ainda pode vencer!' : battle && state.time > fight.limit ? 'Prorrogação: todos perdem a mesma porcentagem de HP.' : battle && state.time < 1.3 ? 'LUTEM!' : battle && state.warnings?.length ? 'Cuidado! Saia dos círculos!' : '';
+    $('arena-boss').classList.toggle('hidden', !battle || !boss);
+    if (boss) { $('arena-boss').querySelector('b').textContent = fight.title; const meter = $('arena-boss').querySelector('meter'); meter.max = boss.maxHp; meter.value = boss.hp; $('arena-boss').querySelector('small').textContent = Math.ceil(boss.hp) + ' / ' + boss.maxHp + ' HP'; }
     if (fighter) $('arena-attacks').querySelectorAll('button').forEach((b, i) => {
+      if (i >= 4) return;
       const cd = fighter.cooldowns[i]; b.disabled = fighter.hp <= 0 || cd > 0 || G.SettingsUI.isOpen;
       if (b.dataset.move !== fighter.moves[i].id) { b.dataset.move = fighter.moves[i].id; b.querySelector('i').innerHTML = G.Icons.html('move:' + fighter.moves[i].id, 24); }
       b.querySelector('kbd').textContent = label(keys()[i]); b.querySelector('b').textContent = G.T(fighter.moves[i].name);
       b.querySelector('small').textContent = cd > 0 ? cd.toFixed(1) + 's' : R.SKILLS[i].role;
       b.style.setProperty('--attack-color', G.U.TYPE_COLOR[fighter.moves[i].type] || '#ffcb3d');
     });
+    if (fighter) {
+      const controls = controlKeys(), dash = $('arena-dash'), apple = $('arena-apple');
+      const friend = state.fighters.find(f => f.team === fighter.team && f.id !== fighter.id && f.hp > 0);
+      dash.disabled = fighter.hp <= 0 || fighter.dashCooldown > 0 || G.SettingsUI.isOpen;
+      dash.querySelector('kbd').textContent = label(controls[4]);
+      dash.querySelector('small').textContent = fighter.dashCooldown > 0 ? fighter.dashCooldown.toFixed(1) + 's' : 'Pronto';
+      dash.style.setProperty('--attack-color', '#7bdcff');
+      apple.disabled = fighter.hp <= 0 || !fighter.apples || !friend || friend.hp >= friend.maxHp || G.SettingsUI.isOpen;
+      apple.querySelector('kbd').textContent = label(controls[5]); apple.querySelector('b').textContent = 'Maçã · ' + (fighter.apples || 0) + '/1';
+      apple.querySelector('small').textContent = !fighter.apples ? 'Pegue uma maçã' : !friend ? 'Parceiro caído' : friend.hp >= friend.maxHp ? 'Parceiro com HP cheio' : '+25% HP do parceiro';
+      apple.style.setProperty('--attack-color', '#87ff9d');
+    }
   }
   function nativeStage(round) {
     if (stage && stageRound === round) return stage;
@@ -314,6 +353,16 @@ G.ArenaUI = (() => {
       } else if (e.kind === 'heal') {
         G.FX.ring(e.x, e.y, 5, 44, '#73ed94', 0.5, 3); G.FX.sp('heart', 'grass', e.x, e.y - 24, { vy: -45, life: 0.6 });
         G.FX.dmgText(e.x, e.y - 60, '+' + e.amount + ' HP', '#87ff9d'); G.Audio.sfx('heal');
+      } else if (e.kind === 'dash') {
+        G.FX.ring(e.x, e.y, 6, 38, '#7bdcff', 0.25, 2);
+        G.FX.burst(e.x, e.y - 12, '#a9edff', 10, 100); G.Audio.sfx('select');
+      } else if (e.kind === 'apple-pickup' || e.kind === 'apple-throw') {
+        if (e.kind === 'apple-pickup' && e.fighter === humanId) G.FX.dmgText(e.x, e.y - 78, '+1 maçã', '#87ff9d');
+        G.Audio.sfx('select');
+      } else if (e.kind === 'warning') {
+        G.Audio.sfx('boss');
+      } else if (e.kind === 'slam') {
+        G.FX.ring(e.x, e.y, 8, e.radius, col, 0.5, 5); G.FX.burst(e.x, e.y, col, 20, 160); G.Audio.sfx('hit');
       }
     }
     G.FX.update(dt);
@@ -325,6 +374,11 @@ G.ArenaUI = (() => {
     const ctx = cv.getContext('2d'), scale = Math.min(width / R.WIDTH, height / R.HEIGHT), ox = (width - R.WIDTH * scale) / 2, oy = (height - R.HEIGHT * scale) / 2;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#091424'; ctx.fillRect(0, 0, width, height); ctx.translate(ox, oy); ctx.scale(scale, scale);
     ctx.imageSmoothingEnabled = false; ctx.drawImage(nativeStage(state.round), 0, 0);
+    for (const z of state.warnings || []) {
+      ctx.fillStyle = '#ff566525'; ctx.strokeStyle = '#ffcb72'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(z.x, z.y, z.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(z.x, z.y, z.radius * Math.max(0, 1 - z.life / 1.2), 0, Math.PI * 2); ctx.stroke();
+    }
     for (const a of state.apples) {
       const y = a.y - (a.fall || 0) * 180;
       ctx.fillStyle = '#0005'; ctx.beginPath(); ctx.ellipse(a.x, a.y + 8, 15, 6, 0, 0, 7); ctx.fill();
@@ -337,17 +391,22 @@ G.ArenaUI = (() => {
       G.VFX.draw(ctx, vis.proj, vis.pal, p.x, p.y - G.LIFT, { angle, scale: 1.5, frame: Math.floor(state.time * 12) });
       if (vis.trail && Math.random() < dt * 20) G.FX.trail(vis.trail, vis.pal, p.x, p.y - G.LIFT, p.vx, p.vy);
     }
+    for (const apple of state.thrownApples || []) {
+      G.Icons.draw(ctx, 'berry', apple.x - 13, apple.y - G.LIFT - 13, 26);
+      G.FX.px(apple.x, apple.y - G.LIFT, '#87ff9d', { life: 0.2 });
+    }
     for (const f of state.fighters.slice().sort((a, b) => a.y - b.y)) {
       let anim = anims.get(f.id + ':' + f.dex);
-      if (!anim) { anim = new G.Sprites.Animator(f.dex, Math.min(1.4, 60 / G.Sprites.bodyHeight(f.dex))); anims.set(f.id + ':' + f.dex, anim); G.Sprites.preload([f.dex], 8000, false); }
+      if (!anim) { anim = new G.Sprites.Animator(f.dex, Math.min(1.4, 60 / G.Sprites.bodyHeight(f.dex)) * (f.scale || 1)); anims.set(f.id + ':' + f.dex, anim); G.Sprites.preload([f.dex], 8000, false); }
       anim.loop(f.hp <= 0 ? 'Faint' : f.cast > 0 ? 'Attack' : f.moving ? 'Walk' : 'Idle'); anim.dir = G.Sprites.dirFromAngle(f.angle); anim.update(dt);
       ctx.globalAlpha = f.hp > 0 ? 1 : 0.35; G.Sprites.drawShadow(ctx, f.dex, f.x, f.y, anim.scale);
+      if (f.dashLeft > 0) { ctx.strokeStyle = '#a5ecff'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(f.x, f.y - 15); ctx.lineTo(f.x - Math.cos(f.dashAngle) * 48, f.y - 15 - Math.sin(f.dashAngle) * 48); ctx.stroke(); }
       ctx.strokeStyle = f.team === 0 ? '#68def0' : '#ff7183'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(f.x, f.y + 2, 25, 10, 0, 0, 7); ctx.stroke();
       anim.draw(ctx, f.x, f.y, { flash: f.flash > 0, alpha: f.hp > 0 ? 1 : 0.35 }); ctx.globalAlpha = 1;
       ctx.font = '17px Pixelify, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.strokeStyle = '#081323'; ctx.lineWidth = 4;
-      const name = f.name + (f.id === humanId ? ' · VOCÊ' : ''); ctx.strokeText(name, f.x, f.y - 72); ctx.fillText(name, f.x, f.y - 72);
-      ctx.fillStyle = '#081323'; ctx.fillRect(f.x - 43, f.y - 62, 86, 11); ctx.fillStyle = f.hp < 60 ? '#ff6a74' : '#64dfac'; ctx.fillRect(f.x - 41, f.y - 60, 82 * f.hp / f.maxHp, 7);
-      ctx.font = '13px Pixelify, sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(Math.ceil(f.hp) + ' / ' + f.maxHp, f.x, f.y - 34);
+      const lift = 60 * (f.scale || 1), name = f.name + (f.id === humanId ? ' · VOCÊ' : ''); ctx.strokeText(name, f.x, f.y - lift - 12); ctx.fillText(name, f.x, f.y - lift - 12);
+      ctx.fillStyle = '#081323'; ctx.fillRect(f.x - 43, f.y - lift - 2, 86, 11); ctx.fillStyle = f.hp < f.maxHp * 0.3 ? '#ff6a74' : '#64dfac'; ctx.fillRect(f.x - 41, f.y - lift, 82 * f.hp / f.maxHp, 7);
+      ctx.font = '13px Pixelify, sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(Math.ceil(f.hp) + ' / ' + f.maxHp, f.x, f.y - lift + 26);
     }
     G.FX.draw(ctx);
   }
@@ -360,10 +419,12 @@ G.ArenaUI = (() => {
     if (!visible) return; const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
     if (state) {
       const blocked = G.SettingsUI.isOpen || document.hidden;
+      if (blocked || state.phase !== 'battle') attacks = [];
       const x = blocked ? 0 : touch.x || ((held.has('KeyD') || held.has('ArrowRight') ? 1 : 0) - (held.has('KeyA') || held.has('ArrowLeft') ? 1 : 0));
       const y = blocked ? 0 : touch.y || ((held.has('KeyS') || held.has('ArrowDown') ? 1 : 0) - (held.has('KeyW') || held.has('ArrowUp') ? 1 : 0));
       if (now - sendAt > 50) {
-        const input = { x, y, attack: blocked ? undefined : attacks.shift() };
+        const action = blocked ? undefined : attacks.shift();
+        const input = { x, y, attack: action < 4 ? action : undefined, dash: action === 4, apple: action === 5 };
         if (guest) G.Net.toHost({ k: 'arena-input', room: roomId, ...input }); else engine.input(humanId, input);
         sendAt = now;
       }
@@ -384,11 +445,11 @@ G.ArenaUI = (() => {
   function init() {
     if (initialized) return; initialized = true;
     addEventListener('keydown', e => {
-      if (!visible || !state || G.SettingsUI.isOpen || e.target.matches('input,select,textarea')) return;
+      if (!visible || !state || state.phase !== 'battle' || G.SettingsUI.isOpen || e.target.matches('input,select,textarea')) return;
       if (e.code === 'Escape') { e.preventDefault(); G.Input.endFrame(); held.clear(); G.SettingsUI.open('ctl'); return; }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      const index = keys().indexOf(e.code);
-      if (index >= 0) { e.preventDefault(); if (!e.repeat && attacks.length < 4) attacks.push(index); }
+      const index = controlKeys().indexOf(e.code);
+      if (index >= 0) { e.preventDefault(); if (!e.repeat && attacks.length < 6) attacks.push(index); }
       held.add(e.code);
     });
     addEventListener('keyup', e => held.delete(e.code)); addEventListener('blur', () => { held.clear(); attacks = []; touch = { x: 0, y: 0 }; });
@@ -428,5 +489,5 @@ G.ArenaUI = (() => {
       }
     });
   }
-  return { init, open, close, hasInvite, keys, keyLabel: label, defaults, get state() { return state; }, get active() { return visible; } };
+  return { init, open, close, hasInvite, keys, controlKeys, setControlKeys, keyLabel: label, defaults, get state() { return state; }, get active() { return visible; } };
 })();

@@ -11,6 +11,16 @@
  * drums:  X fuerte · x medio · o suave · . nada
  */
 G.MUSIC = {
+  rogue: {
+    bpm: 88, swing: 0.08, chords: ['Am', 'Am', 'F', 'E', 'Dm', 'Am', 'F', 'E'],
+    melody: [{ inst: 'flute', vel: 0.65, bars: [
+      'A3:4 E4:4 G4:4 E4:4', 'C4:6 B3:2 A3:4 -:4', 'F3:4 C4:4 E4:4 C4:4', 'B3:4 G3:4 E3:4 -:4',
+      'D4:4 A4:4 F4:4 E4:4', 'C4:4 B3:4 A3:4 E3:4', 'F3:4 A3:4 C4:4 E4:4', 'B3:4 G3:4 E3:8'
+    ] }],
+    parts: [{ inst: 'bass', octave: 2, useBass: true, vel: 0.7, pattern: 'R---F---R---O---' },
+      { inst: 'bell', octave: 4, vel: 0.25, pattern: '0...2...1...3...' }, { inst: 'pad', octave: 3, vel: 0.45, pattern: 'C---------------' }],
+    drums: { kick: 'x.......x.......', shaker: '....o.......o...' }
+  },
   // ---------------- Menú: una aldea tranquila ----------------
   village: {
     bpm: 100, swing: 0.18,

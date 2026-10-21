@@ -6,6 +6,26 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-21', title: ['Sprites nos botões de dash e maçã', 'Dash and apple button sprites'], chg: [
+    ['Os botões de dash e maçã agora mostram sprites grandes em pixel art no Survivor, na Arena e no Rogue: uma bota com rastro de velocidade e a mesma maçã coletada no jogo. Teclas, recarga e reserva de maçãs continuam visíveis, inclusive no celular.',
+     'Dash and apple buttons now feature large pixel sprites in Survivor, Arena and Rogue: a boot with speed trails and the same apple collected in-game. Key hints, cooldown and apple inventory remain visible, including on mobile.']
+  ] },
+  { d: '2026-10-21', title: ['Torre de lutadores na Arena', 'Arena fighter tower'], new: [
+    ['A Arena agora é uma torre de sete lutas em sequência, como nos jogos clássicos de luta: quatro duplas rivais, Machamp e Lucario como subchefes e Mewtwo como chefe final. Contra subchefes e chefe, são dois jogadores contra um rival mais forte, com mais HP, tamanho maior e golpes especiais avisados no chão. A torre mostra os adversários e as vitórias; seu amigo ou bot continua ao seu lado. HP e recargas são restaurados entre as lutas.',
+     'Arena is now a seven-fight ladder inspired by classic fighting games: four rival duos, Machamp and Lucario as minibosses, and Mewtwo as the final boss. Boss encounters are two allies against one stronger rival, with more HP, larger sprites and telegraphed special attacks. The tower shows every opponent and victory; your friend or bot stays at your side. HP and cooldowns reset between fights.']
+  ] },
+  { d: '2026-10-21', title: ['Rogue · Cavernas', 'Rogue · Caves'], new: [
+    ['Rogue: nueve salas en tres ciclos de caverna. Cada ciclo trae una horda fácil, una horda media con subjefe y un jefe más grande con ataques anunciados. Elige una bendición para el equipo entre salas y conserva nivel y ataques durante la expedición. Juega con amigos o bots, incluso con invitados que lleguen después del inicio. Terrenos de cueva, música nueva y sprites, efectos y sonidos del juego. Dash y manzanas también disponibles.',
+     'Rogue: nine rooms across three cave cycles. Each cycle brings an easy horde, a medium horde with a miniboss, and a larger boss with telegraphed attacks. Choose a team blessing between rooms, keeping levels and attacks during the expedition. Play with friends or bots, including guests joining mid-run. Cave terrain, new music, and the game’s sprites, effects and sounds. Dash and apples are available too.']
+  ] },
+  { d: '2026-10-21', title: ['Dash y manzanas en Survivor', 'Dash and apples in Survivor'], new: [
+    ['Survivor ahora también tiene dash y manzana para compañeros, con los mismos atajos de la Arena. El dash usa la velocidad actual del Pokémon y respeta los obstáculos. Recoger una manzana cura el 25% del HP y guarda una para lanzar a un aliado herido cercano; prioriza amigos y también permite alimentar bots. La reserva empieza vacía en cada partida y los lanzamientos se sincronizan con el anfitrión.',
+     'Survivor now also has dash and teammate apples, sharing Arena shortcuts. Dash uses the Pokémon’s current speed and respects obstacles. Picking up an apple heals 25% HP and stores one to throw to a nearby injured ally, prioritizing friends while also allowing bots to be fed. Inventory starts empty each run and throws are synchronized through the host.']
+  ] },
+  { d: '2026-10-21', title: ['Dash y manzanas compartidas', 'Dash and shared apples'], new: [
+    ['Arena: botón de dash con alcance, velocidad y recarga según la velocidad del Pokémon. Úsalo con Espacio o el botón táctil. Empiezas sin manzanas; recoger una cura el 25% del HP y guarda una para lanzar a tu compañero con E o el botón de manzana. La manzana lanzada cura el 25% del HP del aliado sin crear otra. Las dos teclas se pueden configurar.',
+     'Arena: dash button with distance, speed and cooldown based on Pokémon speed. Use Space or the touch button. Start with no apples; picking one up heals 25% HP and stores one to throw to your partner with E or the apple button. Thrown apples heal the ally for 25% HP without creating another apple. Both keys can be remapped.']
+  ] },
   { d: '2026-10-21', title: ['Poderes de la Arena', 'Arena powers'], new: [
     ['Arena: compra nuevos ataques por 150 monedas para cada Pokémon y configura sus cuatro teclas antes del campeonato. Las compras se conservan y equipar ataques aprendidos es gratis. Tu compañero bot también puede entrenar; cada invitado usa sus propios poderes. El tipo, el daño y la recarga del poder se aplican en combate.',
      'Arena: buy new moves for 150 coins per Pokémon and configure four attack keys before the tournament. Purchases persist and equipping learned moves is free. Your bot partner can train too; each guest uses their own powers. Move type, damage and cooldown apply in combat.']

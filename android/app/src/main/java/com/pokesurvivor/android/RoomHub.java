@@ -120,7 +120,7 @@ public final class RoomHub {
                     if (rooms.size() >= 32) throw new Exception("Hay demasiadas salas. Inténtalo más tarde.");
                     Room next = new Room(); do { next.id = id(6); } while (rooms.containsKey(next.id));
                     next.host = c.uid; next.catalog = catalogOf(m.optJSONArray("catalog")); next.slots = slotsOf(m.optJSONArray("slots"), next.catalog);
-                    next.mode = m.optString("mode").equals("arena") ? "arena" : "survival";
+                    next.mode = Arrays.asList("arena", "rogue").contains(m.optString("mode")) ? m.optString("mode") : "survival";
                     info.put("slot", 0); next.members.put(c.uid, info); rooms.put(next.id, next); c.room = next.id;
                     result.put("room", next.view()); break;
                 }
@@ -150,19 +150,20 @@ public final class RoomHub {
                     r.members.put(c.uid, info); broadcast(r); break;
                 case "slots": {
                     if (r == null || !r.host.equals(c.uid)) throw new Exception("Sólo el anfitrión puede cambiar los huecos.");
+                    if (m.has("mode") && (r.run != null || r.mode.equals("arena") || !Arrays.asList("survival", "rogue").contains(m.optString("mode")))) throw new Exception("O modo só pode mudar antes da partida.");
                     JSONArray next = slotsOf(m.optJSONArray("slots"), r.catalog);
                     for (JSONObject p : r.members.values()) {
                         int slot = p.optInt("slot") - 1; if (slot < 0) continue;
                         JSONObject a = next.getJSONObject(slot), b = r.slots.getJSONObject(slot);
                         if (a.optString("kind").equals("bot") && (!b.optString("kind").equals("bot") || a.optInt("dex") != b.optInt("dex"))) throw new Exception("Ese hueco está ocupado por un jugador.");
                     }
-                    r.slots = next; broadcast(r); break;
+                    r.slots = next; if (m.has("mode")) r.mode = m.getString("mode"); broadcast(r); break;
                 }
                 case "start": {
                     if (r == null || !r.host.equals(c.uid)) throw new Exception("Sólo el anfitrión puede empezar.");
                     if (r.run != null) throw new Exception("La partida ya está en marcha.");
                     double seed = m.optDouble("seed", -1); if (seed < 0 || seed > 2147483647 || seed != Math.floor(seed)) throw new Exception("Mensaje inválido.");
-                    r.run = json("id", id(8), "seed", (int)seed); r.open = !r.mode.equals("arena"); broadcast(r); result.put("room", r.view()); break;
+                    r.run = json("id", id(8), "seed", (int)seed, "mode", r.mode); r.open = !r.mode.equals("arena"); broadcast(r); result.put("room", r.view()); break;
                 }
                 case "finish":
                     if (r == null || !r.host.equals(c.uid)) throw new Exception("Sólo el anfitrión puede terminar.");
