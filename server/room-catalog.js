@@ -23,9 +23,10 @@ function originAllowed(origin, host) {
     return ['http:', 'https:'].includes(url.protocol) && (url.host === host || ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname));
   } catch { return false; }
 }
-function slotsOf(input, catalog) {
+function capacityOf(mode) { return mode === 'rogue' || mode === 'arena' ? 2 : 4; }
+function slotsOf(input, catalog, mode) {
   const used = new Set();
-  return Array.from({ length: 3 }, (_, i) => {
+  return Array.from({ length: mode === 'rogue' ? 1 : 3 }, (_, i) => {
     const slot = input?.[i];
     if (slot?.kind !== 'bot') return { kind: 'friend' };
     const dex = Number(slot.dex);
@@ -35,13 +36,13 @@ function slotsOf(input, catalog) {
 }
 function freeSlot(room) {
   const occupied = new Set([...room.members.values()].map(m => m.slot));
-  const free = [1, 2, 3].filter(i => !occupied.has(i));
+  const free = Array.from({ length: room.slots.length }, (_, i) => i + 1).filter(i => !occupied.has(i));
   return free.find(i => room.slots[i - 1].kind !== 'bot') ?? free[0];
 }
 function roomView(room) {
   const members = [...room.members.values()].sort((a, b) => a.slot - b.slot);
   const occupied = new Set(members.map(m => m.slot));
   const bots = room.slots.flatMap((s, i) => s.kind === 'bot' && !occupied.has(i + 1) ? [{ ...s, slot: i + 1 }] : []);
-  return { id: room.id, host: room.host, mode: room.mode || 'survival', open: room.open, catalog: room.catalog, members, slots: room.slots, bots, run: room.run };
+  return { id: room.id, host: room.host, mode: room.mode || 'survival', capacity: capacityOf(room.mode), open: room.open, catalog: room.catalog, members, slots: room.slots, bots, run: room.run };
 }
-module.exports = { catalogOf, choiceOf, originAllowed, slotsOf, freeSlot, roomView };
+module.exports = { catalogOf, choiceOf, originAllowed, capacityOf, slotsOf, freeSlot, roomView };

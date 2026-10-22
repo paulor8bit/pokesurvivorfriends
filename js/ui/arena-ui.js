@@ -17,7 +17,7 @@ G.ArenaUI = (() => {
     G.Settings.set('arenaKeys', list.slice(0, 4)); G.Settings.set('arenaDashKey', list[4]); G.Settings.set('arenaAppleKey', list[5]);
   }
   let visible = false, engine = null, state = null, humanId = '0:0', guest = false, roomId = null;
-  let config = { dex: 0, bot: 7, mode: 'bot', name: '' }, held = new Set(), touch = { x: 0, y: 0 }, attacks = [];
+  let config = { dex: 0, bot: 7, mode: 'bot', name: '' }, held = new Set(), attacks = [];
   let last = 0, sendAt = 0, lastFrame = 0, readyAt = 0, panelAt = 0, phase = '', anims = new Map(), initialized = false, busy = false;
   let stage = null, stageRound = -1, seenEvent = 0, seenSerial = -1, pickerTarget = 'dex', presentationPhase = '';
   const powers = G.ArenaPowers, peerPowers = new Map();
@@ -237,16 +237,13 @@ G.ArenaUI = (() => {
       <div class="arena-top"><div><b>Arena 2 × 2</b><span id="arena-status"></span></div><div><button id="arena-settings" class="btn small">Teclas</button><button id="arena-exit" class="btn small">Sair</button></div></div>
       <div id="arena-bracket" class="arena-bracket"></div><div id="arena-notice" role="status"></div>
       <div id="arena-boss" class="arena-boss hidden"><b></b><meter min="0"></meter><small></small></div>
-      <div id="arena-stick" aria-label="Arraste para mover"><span>＋</span></div><div id="arena-attacks" class="arena-attacks"></div>`;
+      <div id="arena-attacks" class="arena-attacks"></div>`;
+    G.Touch.attach($('arena-canvas'));
     $('arena-settings').onclick = () => G.SettingsUI.open('ctl'); $('arena-exit').onclick = close;
     $('arena-attacks').innerHTML = R.SKILLS.map((s, i) => `<button data-arena-attack="${i}" aria-label="Ataque ${i + 1}"><i></i><kbd></kbd><b></b><small></small></button>`).join('');
     $('arena-attacks').insertAdjacentHTML('beforeend', `<button id="arena-dash" class="sprite-action" data-arena-action="4" aria-label="Dash"><i class="action-sprite">${G.Icons.html('dash', 48)}</i><kbd></kbd><b>Dash</b><small></small></button>
       <button id="arena-apple" class="sprite-action" data-arena-action="5" aria-label="Lançar maçã ao parceiro"><i class="action-sprite">${G.Icons.html('berry', 48)}</i><kbd></kbd><b></b><small></small></button>`);
     $('arena-attacks').querySelectorAll('button').forEach(b => b.onpointerdown = e => { e.preventDefault(); if (!b.disabled && attacks.length < 6) attacks.push(Number(b.dataset.arenaAttack ?? b.dataset.arenaAction)); });
-    const stick = $('arena-stick'); let origin = null;
-    stick.onpointerdown = e => { e.preventDefault(); origin = { id: e.pointerId, x: e.clientX, y: e.clientY }; stick.setPointerCapture(e.pointerId); };
-    stick.onpointermove = e => { if (origin?.id !== e.pointerId) return; const x = (e.clientX - origin.x) / 38, y = (e.clientY - origin.y) / 38, d = Math.max(1, Math.hypot(x, y)); touch = { x: x / d, y: y / d }; };
-    stick.onpointerup = stick.onpointercancel = () => { origin = null; touch = { x: 0, y: 0 }; };
     phase = ''; held.clear(); attacks = []; lastFrame = performance.now(); renderPanel();
   }
   function bracket() {
@@ -277,8 +274,8 @@ G.ArenaUI = (() => {
   function renderPanel() {
     if (!state || !$('arena-canvas')) return;
     const battle = state.phase === 'battle';
-    $('arena-bracket').classList.toggle('hidden', battle); $('arena-stick').classList.toggle('hidden', !battle); $('arena-attacks').classList.toggle('hidden', !battle);
-    if (phase !== state.phase + state.round) { phase = state.phase + state.round; if (!battle) bracket(); }
+    $('arena-bracket').classList.toggle('hidden', battle); $('arena-attacks').classList.toggle('hidden', !battle);
+    if (phase !== state.phase + state.round) { phase = state.phase + state.round; G.Touch.reset(); if (!battle) bracket(); }
     const fighter = state.fighters.find(f => f.id === humanId);
     const fight = R.encounter(state.round), boss = state.fighters.find(f => ['mini', 'boss'].includes(f.rank));
     $('arena-status').textContent = `${state.round + 1}/7 · ${fight.title} · ${fight.kind === 'duo' ? '2 × 2' : '2 × 1'}` + (battle ? ' · ' + Math.ceil(Math.max(0, fight.limit - state.time)) + 's' : '');
@@ -409,6 +406,8 @@ G.ArenaUI = (() => {
       ctx.font = '13px Pixelify, sans-serif'; ctx.fillStyle = '#fff'; ctx.fillText(Math.ceil(f.hp) + ' / ' + f.maxHp, f.x, f.y - lift + 26);
     }
     G.FX.draw(ctx);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    if (state.phase === 'battle' && !G.SettingsUI.isOpen) G.Touch.draw(ctx);
   }
   function sendFrame(to) {
     if (!engine || !roomId) return;
@@ -419,9 +418,8 @@ G.ArenaUI = (() => {
     if (!visible) return; const dt = Math.min(0.05, Math.max(0, (now - last) / 1000)); last = now;
     if (state) {
       const blocked = G.SettingsUI.isOpen || document.hidden;
-      if (blocked || state.phase !== 'battle') attacks = [];
-      const x = blocked ? 0 : touch.x || ((held.has('KeyD') || held.has('ArrowRight') ? 1 : 0) - (held.has('KeyA') || held.has('ArrowLeft') ? 1 : 0));
-      const y = blocked ? 0 : touch.y || ((held.has('KeyS') || held.has('ArrowDown') ? 1 : 0) - (held.has('KeyW') || held.has('ArrowUp') ? 1 : 0));
+      if (blocked || state.phase !== 'battle') { attacks = []; G.Touch.reset(); }
+      const [x, y] = blocked || state.phase !== 'battle' ? [0, 0] : G.Input.axis();
       if (now - sendAt > 50) {
         const action = blocked ? undefined : attacks.shift();
         const input = { x, y, attack: action < 4 ? action : undefined, dash: action === 4, apple: action === 5 };
@@ -436,7 +434,7 @@ G.ArenaUI = (() => {
   }
   async function close() {
     if (busy) return;
-    visible = false; engine = null; state = null; held.clear(); touch = { x: 0, y: 0 }; attacks = []; anims.clear(); G.FX.clear(); stage = null;
+    visible = false; engine = null; state = null; held.clear(); G.Touch.attach($('game')); attacks = []; anims.clear(); G.FX.clear(); stage = null;
     $('scr-arena').classList.add('hidden');
     if (G.Social.room?.mode === 'arena') await G.Social.leaveRoom();
     roomId = null; peerPowers.clear(); if (hasInvite()) history.replaceState(null, '', location.pathname + location.search);
@@ -452,11 +450,11 @@ G.ArenaUI = (() => {
       if (index >= 0) { e.preventDefault(); if (!e.repeat && attacks.length < 6) attacks.push(index); }
       held.add(e.code);
     });
-    addEventListener('keyup', e => held.delete(e.code)); addEventListener('blur', () => { held.clear(); attacks = []; touch = { x: 0, y: 0 }; });
+    addEventListener('keyup', e => held.delete(e.code)); addEventListener('blur', () => { held.clear(); attacks = []; G.Touch.reset(); });
     G.Social.on(() => {
       if (!visible) return;
       const room = G.Social.room;
-      if (roomId && (!room || room.id !== roomId)) { visible = false; state = null; engine = null; roomId = null; G.FX.clear(); stage = null; $('scr-arena').classList.add('hidden'); G.UI.toast('A sala da Arena foi encerrada.'); G.Flow.goMenu(); return; }
+      if (roomId && (!room || room.id !== roomId)) { visible = false; state = null; engine = null; roomId = null; G.Touch.attach($('game')); G.FX.clear(); stage = null; $('scr-arena').classList.add('hidden'); G.UI.toast('A sala da Arena foi encerrada.'); G.Flow.goMenu(); return; }
       if (room?.mode === 'arena') {
         roomId = room.id; guest = !room.isHost;
         if (engine) {
@@ -489,5 +487,6 @@ G.ArenaUI = (() => {
       }
     });
   }
-  return { init, open, close, hasInvite, keys, controlKeys, setControlKeys, keyLabel: label, defaults, get state() { return state; }, get active() { return visible; } };
+  function padAction(i) { if (!state || state.phase !== 'battle' || G.SettingsUI.isOpen) return; if (i === 6) { attacks = []; G.Touch.reset(); G.SettingsUI.open('ctl'); } else if (i >= 0 && i < 6 && attacks.length < 6) attacks.push(i); }
+  return { init, open, close, hasInvite, keys, controlKeys, setControlKeys, keyLabel: label, defaults, padAction, get state() { return state; }, get active() { return visible; } };
 })();

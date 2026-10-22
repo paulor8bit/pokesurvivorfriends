@@ -151,7 +151,7 @@ G.Game = (() => {
     G.Bots.clear();
     if (coop) {
       G.Coop.begin(coop, pl, coopApi);
-      if (G.Coop.isHost) G.Bots.begin(pl, coop.bots || []);
+      if (G.Coop.isHost) G.Bots.begin(pl, coop.mode === 'rogue' ? (coop.bots || []).filter(b => b.slot === 1).slice(0, Math.max(0, 2 - coop.members.length)) : coop.bots || []);
       G.Social.setPlaying(true);
     } else {
       G.Bots.begin(pl);      // compañeros reclutados (sólo en solitario)
@@ -766,8 +766,7 @@ G.Game = (() => {
     for (const e of extra) items.push({ y: e.y, ent: e });
     const rift = G.Rift.drawable();
     if (rift) items.push({ y: rift.y, ent: rift });
-    const cave = G.Rogue.drawable();
-    if (cave) items.push({ y: cave.y, ent: cave });
+    for (const cave of G.Rogue.drawables()) items.push({ y: cave.y, ent: cave });
     const arceus = pl && state !== 'ui' ? G.Judgment.drawable() : null;
     if (arceus) items.push({ y: arceus.y, ent: arceus });
     if (pl && state !== 'ui') for (const d of G.Events.drawables()) items.push({ y: d.y, ent: d });

@@ -14,6 +14,7 @@ G.Touch = (() => {
   let cv = null, stick = null;
   let active = G.Settings.touch;      // ¿se está usando táctil?
   let buttons = [];
+  const bound = new WeakSet(); let initialized = false;
 
   const R = () => 56 * (G.Settings.get('stick') || 1);
   const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -28,8 +29,11 @@ G.Touch = (() => {
     return { x: clamp(p[0] * w, r + 4, w - r - 4), y: clamp(p[1] * h, r + 4, h - r - 4) };
   }
 
-  function init(canvas) {
+  function attach(canvas) {
     cv = canvas;
+    reset(); buttons = [];
+    if (bound.has(canvas)) return;
+    bound.add(canvas);
     if (active) document.body.classList.add('touch');
     cv.addEventListener('pointerdown', down);
     cv.addEventListener('pointermove', move);
@@ -47,6 +51,10 @@ G.Touch = (() => {
       if (!active) { active = true; document.body.classList.add('touch'); }
       for (const t of e.changedTouches) { const b = hit(t.clientX, t.clientY); if (b) press(b); }
     }, { passive: false });
+  }
+  function init(canvas) {
+    attach(canvas);
+    if (initialized) return; initialized = true;
     document.addEventListener('selectstart', e => {
       if (!e.target.closest || !e.target.closest('input, textarea, [contenteditable]')) e.preventDefault();
     });
@@ -76,7 +84,8 @@ G.Touch = (() => {
     if (touchy && !active) { active = true; document.body.classList.add('touch'); }
     const b = hit(e.clientX, e.clientY);
     if (b) { e.preventDefault(); press(b); return; }
-    if (!touchy || stick || !G.Game || G.Game.state !== 'playing') return;
+    const playing = G.ArenaUI?.active ? G.ArenaUI.state?.phase === 'battle' && !G.SettingsUI.isOpen : G.Game?.state === 'playing';
+    if (!touchy || stick || !playing) return;
     if (fixed()) {
       // Fijo: sólo si el dedo cae cerca del joystick (si no, no hace nada).
       const b0 = stickBase();
@@ -158,6 +167,6 @@ G.Touch = (() => {
     ctx.restore();
   }
 
-  return { init, vector, draw, drawStick, clearButtons, addButton, reset, safeArea, resetSafe, spot, stickBase, R, STICK_DEF,
+  return { init, attach, vector, draw, drawStick, clearButtons, addButton, reset, safeArea, resetSafe, spot, stickBase, R, STICK_DEF,
            get active() { return active; }, get stick() { return stick; } };
 })();

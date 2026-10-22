@@ -110,7 +110,7 @@ G.RunUI = (() => {
   function showOver(r, onBack) {
     $('over-title').textContent = r.rogue?.victory ? 'Rogue · Expedição concluída!' : r.dead ? 'Has caído…' : 'Run terminada';
     $('over-stats').innerHTML = `
-      ${r.rogue ? `<div style="grid-column:1/-1" translate="no"><span>Rogue · Cavernas</span><b>${r.rogue.completed}/9 salas · ${r.rogue.victory ? '3 ciclos vencidos' : 'Expedição encerrada'}</b></div>` : ''}
+      ${r.rogue ? `<div style="grid-column:1/-1" translate="no"><span>Rogue · Cavernas</span><b>${r.rogue.completed}/9 cavernas · ${r.rogue.victory ? '3 ciclos vencidos' : 'Expedição encerrada'}</b></div>` : ''}
       <div><span>Tiempo</span><b>${G.U.mmss(r.time)}</b></div>
       <div><span>Nivel</span><b>${r.level}</b></div>
       <div><span>Derrotados</span><b>${r.kills}</b></div>

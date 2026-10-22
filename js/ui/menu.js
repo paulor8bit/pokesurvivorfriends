@@ -17,7 +17,7 @@ G.MenuUI = (() => {
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
       b.onclick = () => {
         const go = b.dataset.go;
-        if (go === 'play') { if (G.Social.room?.mode === 'arena') G.ArenaUI.open(); else G.FriendsUI.open(); }
+        if (go === 'play') { if (G.Social.room?.mode === 'arena') G.ArenaUI.open(); else G.FriendsUI.open('survival'); }
         else if (go === 'arena') G.ArenaUI.open();
         else if (go === 'rogue') G.FriendsUI.open('rogue');
         else if (go === 'dex') openDex();

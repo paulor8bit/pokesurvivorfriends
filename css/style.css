@@ -549,6 +549,7 @@ input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 
 #fr-add .field { min-width: 180px; }
 
 .lobby-members { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 10px; }
+.lobby-members.rogue-duo { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 520px; margin-left: auto; margin-right: auto; }
 .lob-card {
   display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 6px;
   border-radius: 10px; background: rgba(0,0,0,.25); border: 3px solid var(--pc, rgba(244,248,255,.2));
@@ -1019,6 +1020,10 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 #survivor-actions button:disabled { opacity: .55; }
 #rogue-hud { position: fixed; z-index: 14; top: 105px; left: 50%; transform: translateX(-50%); width: min(570px, 74vw); pointer-events: none; text-align: center; }
 #rogue-status { display: inline-block; padding: 8px 12px; border: 1px solid #b599ff; border-radius: 9px; background: #101625df; color: #e5dcff; font-size: 13px; white-space: pre-line; }
+#rogue-map-wrap { position: fixed; z-index: 13; top: 110px; left: 12px; width: 176px; padding: 6px; border: 1px solid #78909f; border-radius: 8px; background: #101625e8; text-align: center; pointer-events: none; }
+#rogue-map-wrap b, #rogue-map-wrap small { display: block; font-size: 11px; color: #cedee8; }
+#rogue-map { width: 100%; display: block; }
+@media (max-width: 700px), (max-height: 500px) { #rogue-map-wrap { top: 117px; width: 116px; left: 7px; padding: 3px; } #rogue-map-wrap b, #rogue-map-wrap small { font-size: 9px; } }
 #rogue-boons { margin-top: 36px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; pointer-events: auto; }
 #rogue-boons:empty { display: none; }
 #rogue-boons p { width: 100%; padding: 7px; margin: 0; border-radius: 7px; background: #101625ef; color: #ffe2a1; }

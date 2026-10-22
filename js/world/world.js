@@ -72,6 +72,7 @@ G.World = (() => {
   }
 
   function terrainRaw(tx, ty) {
+    if (arena?.dungeon) return arena.dungeon.has((tx - arena.tx) + ',' + (ty - arena.ty)) ? FLOOR : WALL;
     const ad = arenaDist(tx, ty);
     if (ad < arena_outer()) {
       if (ad >= arena.r) return WALL;
@@ -133,6 +134,11 @@ G.World = (() => {
 
       // Dentro de la arena: la decoración de su tipo (y nada en el pasillo).
       const ad = arenaDist(tx, ty);
+      if (arena?.dungeon) {
+        // Keep corridors and door approaches free of solid props.
+        if (open && H(tx, ty, seed + 777) > 0.985) c.props.push(makeProp('grass', tx, ty));
+        continue;
+      }
       if (ad < arena_outer() + 2) {
         if (!arena || ad >= arena.r - 1.2 || arenaSafe(tx, ty)) continue;
         const pr = arena.th.props, hh = H(tx, ty, seed + 777);

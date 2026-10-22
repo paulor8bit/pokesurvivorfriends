@@ -62,9 +62,9 @@
   <div class="menu-right">
     <div class="box">
       <div class="menu-list">
-        <button class="menu-item play" data-go="play">Jugar<small>Configura tu equipo e invita amigos</small></button>
-        <button class="menu-item" data-go="arena">Arena 2 × 2<small>Torre de lutadores · subchefes e chefe</small></button>
-        <button class="menu-item" data-go="rogue">Rogue · Cavernas<small>3 ciclos · 9 salas · hordas e chefes</small></button>
+        <button class="menu-item play" data-go="play" translate="no">Survivor<small>Sobreviva com sua equipe e amigos</small></button>
+        <button class="menu-item" data-go="rogue" translate="no">Rogue<small>Explore cavernas, caminhos e salas</small></button>
+        <button class="menu-item" data-go="arena" translate="no">Arena<small>Torre de lutadores · subchefes e chefe</small></button>
         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
         <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
         <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
@@ -201,7 +201,7 @@
       <div class="row"><button id="lobby-choose" class="btn small">Elegir Pokémon</button><button id="lobby-menu" class="btn small ghost">Menú</button><button id="lobby-leave" class="btn small ghost">Salir de la sala</button></div></div>
     <p class="sub" id="lobby-sub"></p>
     <label translate="no">Modo <select id="lobby-mode" class="field"><option value="survival">Survivor</option><option value="rogue">Rogue · Cavernas</option></select></label>
-    <p id="lobby-rogue-note" class="note hidden" translate="no">9 salas em 3 ciclos: horda fácil, horda com subchefe e chefe maior. Escolha uma bênção para a equipe entre salas. Convide amigos ou leve bots.</p>
+    <p id="lobby-rogue-note" class="note hidden" translate="no">No máximo 2 Pokémon: você e um amigo ou bot. Explore 9 cavernas com várias seções em 3 ciclos, enfrente hordas e chefes e atravesse as fendas para seguir.</p>
     <div id="lobby-invitation">
     <label for="lobby-code">Código de la sala</label>
     <input id="lobby-code" class="field" readonly translate="no" style="width:100%;margin:8px 0">
@@ -382,6 +382,6 @@
 
 <!-- datos generados -->
 <section id="scr-arena" class="scr hidden" aria-label="Arena 2 contra 2" translate="no"></section>
-<script defer src="js/app.min.js?v=665dd26074"></script>
+<script defer src="js/app.min.js?v=f161a82fb1"></script>
 </body>
 </html>

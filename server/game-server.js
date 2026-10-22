@@ -7,7 +7,7 @@ const { gzip: gzipCallback } = require('node:zlib');
 const { promisify } = require('node:util');
 const compress = promisify(gzipCallback);
 const { WebSocketServer, WebSocket } = require('ws');
-const { catalogOf, choiceOf, originAllowed, slotsOf, freeSlot, roomView } = require('./room-catalog');
+const { catalogOf, choiceOf, originAllowed, capacityOf, slotsOf, freeSlot, roomView } = require('./room-catalog');
 
 function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
   const rooms = new Map(), clients = new Map();
@@ -110,7 +110,8 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
             let id; do { id = randomBytes(6).toString('hex').toUpperCase(); } while (rooms.has(id));
             info.slot = 0;
             const catalog = catalogOf(m.catalog);
-            const next = { id, host: client.uid, mode: ['arena', 'rogue'].includes(m.mode) ? m.mode : 'survival', open: true, catalog, slots: slotsOf(m.slots, catalog), run: null, members: new Map([[client.uid, info]]) };
+            const mode = ['arena', 'rogue'].includes(m.mode) ? m.mode : 'survival';
+            const next = { id, host: client.uid, mode, open: true, catalog, slots: slotsOf(m.slots, catalog, mode), run: null, members: new Map([[client.uid, info]]) };
             client.room = id; rooms.set(id, next); reply({ ok: true, room: view(next) }); break;
           }
           case 'join': {
@@ -118,7 +119,7 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
             if (room) throw new Error('Sal de tu sala antes de entrar en otra.');
             if (!next) throw new Error('Esa sala ya no existe. Pide un nuevo enlace.');
             if (!next.open) throw new Error('La partida de esa sala ya ha empezado.');
-            if (next.members.size >= (next.mode === 'arena' ? 2 : 4)) throw new Error('La sala está llena.');
+            if (next.members.size >= capacityOf(next.mode)) throw new Error('La sala está llena.');
             if (next.mode === 'arena' && next.run) throw new Error('O campeonato já começou. Aguarde o próximo.');
             const info = member(client, m.member, next);
             info.slot = freeSlot(next);
@@ -141,9 +142,16 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
           case 'slots': {
             if (!room || room.host !== client.uid) throw new Error('Sólo el anfitrión puede cambiar los huecos.');
             if (m.mode !== undefined && (room.run || room.mode === 'arena' || !['survival', 'rogue'].includes(m.mode))) throw new Error('O modo só pode mudar antes da partida.');
-            const next = slotsOf(m.slots, room.catalog);
-            for (const info of room.members.values()) if (info.slot && next[info.slot - 1].kind === 'bot' && JSON.stringify(next[info.slot - 1]) !== JSON.stringify(room.slots[info.slot - 1])) throw new Error('Ese hueco está ocupado por un jugador.');
-            room.slots = next; if (m.mode !== undefined) room.mode = m.mode; broadcast(room); reply({ ok: true }); break;
+            const mode = m.mode ?? room.mode;
+            if (room.members.size > capacityOf(mode)) throw new Error('O Rogue permite no máximo dois Pokémon. Deixe apenas um convidado na sala.');
+            const next = slotsOf(m.slots, room.catalog, mode);
+            for (const info of room.members.values()) {
+              const slot = mode === 'rogue' && info.slot ? 1 : info.slot;
+              if (slot && next[slot - 1].kind === 'bot' && JSON.stringify(next[slot - 1]) !== JSON.stringify(room.slots[slot - 1])) throw new Error('Ese hueco está ocupado por un jugador.');
+            }
+            room.slots = next; room.mode = mode;
+            if (mode === 'rogue') for (const info of room.members.values()) if (info.slot) info.slot = 1;
+            broadcast(room); reply({ ok: true }); break;
           }
           case 'start': {
             if (!room || room.host !== client.uid) throw new Error('Sólo el anfitrión puede empezar.');

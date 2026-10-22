@@ -8,7 +8,7 @@ O foco deste projeto é um aplicativo Windows para jogar solo ou criar salas tem
 
 ## Baixar e instalar
 
-- **[Baixar para Windows x64](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Online-1.3.0-x64.exe)** — aplicativo portátil; baixe e abra o executável. Mantenha a pasta de dados criada ao lado dele para preservar o progresso.
+- **[Baixar para Windows x64](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Online-1.4.0-x64.exe)** — aplicativo portátil; baixe e abra o executável. Mantenha a pasta de dados criada ao lado dele para preservar o progresso.
 - **[Baixar APK Android](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Android.apk)** — versão de teste para Android 8 ou superior, ARM64. Instale o APK no celular; veja [as instruções e limitações](docs/ANDROID.md).
 - [Todas as versões e arquivos de verificação](https://github.com/paulor8bit/pokesurvivorfriends/releases).
 
@@ -17,7 +17,7 @@ Não é necessário baixar o código-fonte nem instalar Node.js para jogar.
 ## Jogar
 
 Abra `PokéSurvivor Online.lnk`, `Jogar.bat` ou o executável em `dist/desktop`.
-Entre em **Jogar** e escolha **Bot** ou **Amigo convidado** para cada uma das três vagas. Você pode começar sozinho e compartilhar o convite a qualquer momento. Um amigo que entra durante a partida ocupa uma vaga livre ou substitui um bot; a sala só fica cheia com quatro jogadores humanos. O computador do anfitrião e o aplicativo precisam permanecer abertos. O túnel gratuito gera um endereço temporário, que muda ao reiniciar.
+Escolha **Survivor**, **Rogue** ou **Arena** na tela inicial. No Survivor e Rogue, escolha **Bot** ou **Amigo convidado** para cada uma das três vagas. Você pode começar sozinho e compartilhar o convite a qualquer momento. Um amigo que entra durante a partida ocupa uma vaga livre ou substitui um bot; a sala só fica cheia com quatro jogadores humanos. O computador do anfitrião e o aplicativo precisam permanecer abertos. O túnel gratuito gera um endereço temporário, que muda ao reiniciar.
 
 O progresso do anfitrião permanece nos dados locais do aplicativo. **Não apague `dist/desktop/PokeSurvivor-data`**: ela pode conter seu salvamento. Para convidados, cada endereço temporário tem seu próprio armazenamento no navegador.
 
@@ -27,20 +27,31 @@ Convidados podem escolher iniciais ou Pokémon emprestados da coleção do anfit
 
 ## Rogue · Cavernas
 
-Abra **Rogue · Cavernas** no menu ou escolha **Rogue** no seletor de modo da
-sala. São **nove salas em três ciclos**: cada ciclo tem uma horda fácil,
-uma horda média com subchefe e um chefe maior com ataques avisados no chão.
+Abra **Rogue** no menu ou escolha **Rogue** no seletor de modo da
+sala. São **nove cavernas em três ciclos**: cada ciclo tem uma caverna fácil,
+uma média com subchefe e uma com chefe maior com ataques avisados no chão.
 As cavernas de musgo, cristais e brasas usam os terrenos, Pokémon, efeitos e
 sons do jogo, com uma nova música de exploração. A dificuldade cresce a cada ciclo.
 
-Limpe a sala, recolha o saque e escolha uma das três bênçãos oferecidas para
-a equipe entrar na próxima. As bênçãos, os níveis e os ataques continuam
-durante a expedição; a próxima run começa novamente no nível 1. Vencer a nona
-sala conclui a expedição. Se todos os jogadores humanos caírem, ela termina.
+Cada caverna tem seis seções: entrada, salão, duas galerias com rotas alternativas,
+alcova de tesouro e câmara da saída. As hordas aparecem ao descobrir cada sala;
+o mapa mostra a exploração compartilhada e a posição dos amigos. É possível
+explorar os desvios e voltar por caminhos diferentes. Na câmara da saída,
+vença a horda para fazer surgir uma fenda animada. Se houver subchefe ou chefe,
+basta derrotá-lo para a fenda aparecer, mesmo que restem inimigos comuns.
+Antes disso, a saída não aparece no cenário. Atravesse a fenda para levar a
+equipe à próxima caverna. Os bots não acionam a saída.
+Uma bênção opcional pode ser escolhida antes de atravessar; sem escolha,
+aplica-se a primeira opção. Ela não teleporta os jogadores. As bênçãos, os
+níveis e os ataques continuam durante a expedição; a próxima run começa no
+nível 1. Atravessar a nona fenda conclui a expedição. Se todos os jogadores humanos caírem, ela termina.
 Moedas e recompensas coletadas seguem o salvamento local habitual.
 
-O modo aceita até quatro jogadores humanos, bots e convidados que chegam
-durante a partida. Dash e maçãs compartilhadas também funcionam. O anfitrião
+O Rogue aceita **no máximo dois Pokémon na equipe: você e um amigo ou bot**.
+Há uma única vaga de parceiro. Convidados podem chegar durante a partida para
+substituir o bot; ao sair, o bot volta. Um terceiro jogador não pode entrar.
+Esse limite vale no Windows e no Android. A equipe salva de Survivor e seus
+treinamentos são preservados. Dash e maçãs compartilhadas também funcionam. O anfitrião
 escolhe o modo antes de começar, controla as hordas e escolhe a bênção da equipe.
 
 ## Arena 2 × 2
@@ -67,7 +78,10 @@ clique em um Pokémon; também pode navegar com as setas e confirmar com Enter.
 O combate reutiliza os terrenos, sprites, efeitos dos golpes, partículas,
 ícones, música e sons do próprio jogo.
 
-Mova com WASD, setas ou o controle de toque à esquerda. Os quatro ataques são
+Mova com WASD, setas, controle físico ou o mesmo joystick de Survivor/Rogue:
+flutuante ao tocar e arrastar no cenário, ou fixo conforme os ajustes de controles.
+No controle físico, A/B/X/Y usam os ataques, LB usa dash e RB lança maçã.
+Os quatro ataques são
 manuais: clique/toque nos botões no canto inferior direito ou use **Num 1–4**.
 Em **Configurações → Controles → Arena**, clique na tecla para alterá-la; as
 preferências ficam neste dispositivo. Cada ataque tem sua própria recarga.

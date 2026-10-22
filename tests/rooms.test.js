@@ -43,18 +43,41 @@ test('Arena rooms allow one invited partner, lock entry during the tournament an
   assert.equal((await extra.rpc('join', { code: created.room.id, member: mon('Extra') })).ok, true);
 });
 const mon = name => ({ name, dex: 25, shiny: false });
-test('Rogue rooms share mode, keep four-human capacity and accept live guests without allowing mode changes mid-run', async t => {
-  const s = await setup(t), host = await s.client(), friend = await s.client();
-  const created = await host.rpc('create', { member: mon('Host'), mode: 'rogue' });
+test('Rogue has two total Pokémon, a single bot slot and live guests replace that bot', async t => {
+  const s = await setup(t), host = await s.client(), friend = await s.client(), extra = await s.client();
+  const created = await host.rpc('create', { member: mon('Host'), mode: 'rogue', catalog: [{ dex: 1 }, { dex: 4 }, { dex: 7 }], slots: [1, 4, 7].map(dex => ({ kind: 'bot', dex })) });
   assert.equal(created.room.mode, 'rogue');
+  assert.equal(created.room.capacity, 2); assert.equal(created.room.slots.length, 1); assert.equal(created.room.bots.length, 1);
   assert.equal((await friend.rpc('join', { code: created.room.id, member: mon('Amigo') })).room.mode, 'rogue');
+  assert.equal((await extra.rpc('join', { code: created.room.id, member: mon('Extra') })).ok, false);
   assert.equal((await friend.rpc('slots', { slots: [], mode: 'survival' })).ok, false);
   assert.equal((await host.rpc('slots', { slots: [], mode: 'survival' })).ok, true);
   assert.equal((await host.rpc('slots', { slots: [], mode: 'rogue' })).ok, true);
   assert.equal((await host.rpc('start', { seed: 7 })).room.run.mode, 'rogue');
   assert.equal((await host.rpc('slots', { slots: [], mode: 'survival' })).ok, false);
-  for (const name of ['Extra A', 'Extra B']) { const p = await s.client(); assert.equal((await p.rpc('join', { code: created.room.id, member: mon(name) })).ok, true); }
-  const fifth = await s.client(); assert.equal((await fifth.rpc('join', { code: created.room.id, member: mon('Cheia') })).ok, false);
+  assert.equal((await extra.rpc('join', { code: created.room.id, member: mon('Extra') })).ok, false);
+  await friend.rpc('leave');
+  const joined = await extra.rpc('join', { code: created.room.id, member: mon('Novo') });
+  assert.equal(joined.ok, true); assert.equal(joined.room.members.length, 2); assert.equal(joined.room.bots.length, 0);
+});
+
+test('switching to Rogue rejects larger teams atomically and remaps a sole guest into the partner slot', async t => {
+  const s = await setup(t), host = await s.client(), friend = await s.client(), extra = await s.client();
+  const created = await host.rpc('create', { member: mon('Host'), catalog: [{ dex: 1 }], slots: [{ kind: 'bot', dex: 1 }, { kind: 'friend' }, { kind: 'friend' }] });
+  const code = created.room.id;
+  assert.equal((await friend.rpc('join', { code, member: mon('Amigo') })).room.members.find(m => m.uid === friend.uid).slot, 2);
+  await extra.rpc('join', { code, member: mon('Extra') });
+  assert.equal((await host.rpc('slots', { slots: [], mode: 'rogue' })).ok, false);
+  const unchanged = await host.rpc('start', { seed: 1 });
+  assert.equal(unchanged.room.mode, 'survival'); assert.equal(unchanged.room.slots.length, 3);
+  await host.rpc('finish');
+  await extra.rpc('leave');
+  assert.equal((await host.rpc('slots', { slots: created.room.slots, mode: 'rogue' })).ok, true);
+  const joined = await host.rpc('start', { seed: 1 });
+  assert.equal(joined.room.capacity, 2); assert.equal(joined.room.members.find(m => m.uid === friend.uid).slot, 1);
+  assert.equal(joined.room.bots.length, 0); assert.equal(joined.room.slots.length, 1);
+  await host.rpc('finish'); assert.equal((await host.rpc('slots', { slots: [], mode: 'survival' })).ok, true);
+  assert.equal((await extra.rpc('join', { code, member: mon('Extra') })).room.capacity, 4);
 });
 
 test('serves game files, keeps checkout and scripts private, no stale tunnel metadata', async t => {

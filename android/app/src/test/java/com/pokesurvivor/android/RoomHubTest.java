@@ -77,14 +77,37 @@ public class RoomHubTest {
         assertTrue(host.rpc("finish").getBoolean("ok"));
     }
     @Test public void rogueModeAndHostRights() throws Exception {
-        Player host = new Player(), guest = new Player();
-        JSONObject room = host.rpc("create", "member", mon(), "mode", "rogue").getJSONObject("room");
+        Player host = new Player(), guest = new Player(), extra = new Player();
+        JSONArray catalog = new JSONArray(), slots = new JSONArray();
+        for (int dex : new int[]{1,4,7}) { catalog.put(RoomHub.json("dex", dex)); slots.put(RoomHub.json("kind", "bot", "dex", dex)); }
+        JSONObject room = host.rpc("create", "member", mon(), "mode", "rogue", "catalog", catalog, "slots", slots).getJSONObject("room");
         assertEquals("rogue", room.getString("mode"));
-        guest.rpc("join", "code", room.getString("id"), "member", mon());
+        assertEquals(2, room.getInt("capacity")); assertEquals(1, room.getJSONArray("slots").length()); assertEquals(1, room.getJSONArray("bots").length());
+        assertEquals(0, guest.rpc("join", "code", room.getString("id"), "member", mon()).getJSONObject("room").getJSONArray("bots").length());
+        assertFalse(extra.rpc("join", "code", room.getString("id"), "member", mon()).getBoolean("ok"));
         assertFalse(guest.rpc("slots", "slots", new JSONArray(), "mode", "survival").getBoolean("ok"));
         assertTrue(host.rpc("slots", "slots", new JSONArray(), "mode", "survival").getBoolean("ok"));
+        assertTrue(extra.rpc("join", "code", room.getString("id"), "member", mon()).getBoolean("ok"));
+        assertFalse(host.rpc("slots", "slots", new JSONArray(), "mode", "rogue").getBoolean("ok"));
+        assertEquals("survival", host.rpc("start", "seed", 7).getJSONObject("room").getString("mode"));
+        host.rpc("finish"); extra.rpc("leave");
         host.rpc("slots", "slots", new JSONArray(), "mode", "rogue");
         assertEquals("rogue", host.rpc("start", "seed", 7).getJSONObject("room").getJSONObject("run").getString("mode"));
         assertFalse(host.rpc("slots", "slots", new JSONArray(), "mode", "survival").getBoolean("ok"));
+        assertFalse(extra.rpc("join", "code", room.getString("id"), "member", mon()).getBoolean("ok"));
+        guest.rpc("leave"); assertTrue(extra.rpc("join", "code", room.getString("id"), "member", mon()).getBoolean("ok"));
+    }
+
+    @Test public void rogueRemapsPartnerSlot() throws Exception {
+        Player host = new Player(), guest = new Player();
+        JSONArray catalog = new JSONArray().put(RoomHub.json("dex", 1));
+        JSONArray slots = new JSONArray().put(RoomHub.json("kind", "bot", "dex", 1)).put(RoomHub.json("kind", "friend"));
+        JSONObject room = host.rpc("create", "member", mon(), "catalog", catalog, "slots", slots).getJSONObject("room");
+        JSONObject joined = guest.rpc("join", "code", room.getString("id"), "member", mon()).getJSONObject("room");
+        assertEquals(2, joined.getJSONArray("members").getJSONObject(1).getInt("slot"));
+        assertTrue(host.rpc("slots", "slots", slots, "mode", "rogue").getBoolean("ok"));
+        JSONObject started = host.rpc("start", "seed", 1).getJSONObject("room");
+        assertEquals(1, started.getJSONArray("members").getJSONObject(1).getInt("slot"));
+        assertEquals(0, started.getJSONArray("bots").length());
     }
 }

@@ -6,6 +6,18 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-22', title: ['Rogue em dupla', 'Rogue duos'], chg: [
+    ['O Rogue agora permite no máximo dois Pokémon na equipe: você e um amigo ou bot. A sala tem uma única vaga de parceiro; o convidado substitui o bot, e um terceiro jogador não pode entrar. O limite também vale no Android e na dificuldade das hordas. Seu treino e sua equipe salva são preservados.',
+     'Rogue now allows at most two team Pokémon: you and a friend or bot. The room has one partner slot; guests replace the bot, and a third player cannot join. The limit also applies on Android and to horde difficulty. Saved training and team settings are preserved.']
+  ] },
+  { d: '2026-10-21', title: ['Fenda após derrotar o chefe', 'Rift after defeating the boss'], chg: [
+    ['No Rogue, a saída agora usa a fenda animada do jogo e só aparece depois de derrotar o subchefe ou chefe da câmara, mesmo que restem inimigos comuns. Nas cavernas sem chefe, a fenda surge ao vencer a horda da saída. Atravesse-a para seguir com a equipe.',
+     'Rogue exits now use the game’s animated rift and appear only after the chamber miniboss or boss is defeated, even if ordinary enemies remain. In caves without a boss, the rift appears after defeating the exit horde. Cross it to move the team onward.']
+  ] },
+  { d: '2026-10-21', title: ['Exploração nas cavernas e controle unificado', 'Cave exploration and shared controls'], chg: [
+    ['A tela inicial agora apresenta Survivor, Rogue e Arena. A Arena usa o mesmo movimento dos outros modos, incluindo joystick flutuante ou fixo, teclado e controle. No Rogue, cada uma das nove cavernas tem seis seções conectadas, caminhos alternativos, hordas nas salas descobertas, tesouro e um mapa de exploração. A saída é uma porta no cenário: derrote a horda da câmara ou seu guardião para abri-la e vá até ela para seguir com a equipe. Escolher uma bênção não teleporta mais os jogadores. A expedição termina ao atravessar a última porta.',
+     'The main menu now presents Survivor, Rogue and Arena. Arena shares the same movement controls, including floating or fixed joystick, keyboard and gamepad. Each of the nine Rogue caves has six connected sections, alternate routes, hordes in discovered rooms, treasure and an exploration map. Defeat the exit chamber horde or its guardian to unlock the physical door, then reach it to move the team onward. Choosing a blessing no longer teleports players. The expedition ends by crossing the last door.']
+  ] },
   { d: '2026-10-21', title: ['Sprites nos botões de dash e maçã', 'Dash and apple button sprites'], chg: [
     ['Os botões de dash e maçã agora mostram sprites grandes em pixel art no Survivor, na Arena e no Rogue: uma bota com rastro de velocidade e a mesma maçã coletada no jogo. Teclas, recarga e reserva de maçãs continuam visíveis, inclusive no celular.',
      'Dash and apple buttons now feature large pixel sprites in Survivor, Arena and Rogue: a boot with speed trails and the same apple collected in-game. Key hints, cooldown and apple inventory remain visible, including on mobile.']

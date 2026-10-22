@@ -96,7 +96,7 @@ G.Coop = (() => {
     if (members.length > 1) local.hadFriends = true;
     for (const [uid] of mates) if (!members.some(m => m.uid === uid)) { mateGone(uid); mates.delete(uid); }
     members.forEach((m, i) => { if (m.uid !== me && !mates.has(m.uid)) addMate(m, i, local.x + ((m.slot || i) - 1) * 40, local.y + 35, host); });
-    if (host) G.Bots.syncSlots(local, room.bots);
+    if (host) G.Bots.syncSlots(local, room.mode === 'rogue' ? (room.bots || []).filter(b => b.slot === 1).slice(0, Math.max(0, 2 - members.length)) : room.bots);
   }
 
   function end() {
@@ -393,7 +393,7 @@ G.Coop = (() => {
       case 'eg': G.EnemyMgr.removeRemote(ev[1], false); break;
       case 'hn': { const e = G.EnemyMgr.get(ev[1]); if (e && !e.dead) e.showHurt(ev[2], ev[3]); break; }
       case 'es':
-        if (G.Rogue.active && G.Rogue.state.phase !== 'fight') break;
+        if (G.Rogue.active && (!G.Rogue.state.remaining || G.Rogue.state.phase === 'victory')) break;
         G.Projectiles.spawn({ x: ev[1], y: ev[2], vx: ev[3], vy: ev[4], dmg: ev[5], r: ev[6], life: ev[7],
                               friendly: false, color: '#ff7a9e', vis: G.VFX.forType(ev[8]), mtype: ev[8], cat: ev[9] });
         break;
@@ -422,7 +422,7 @@ G.Coop = (() => {
       case 'jd': case 'jk': G.Judgment.onEvent(ev); break;
       case 'wx': G.Weather.onEvent(ev); break;
       case 'ev': G.Events.onNet(ev); break;
-      case 'hz': if (!G.Rogue.active || G.Rogue.state.phase === 'fight') G.Hazards.add(ev[1], true); break;
+      case 'hz': if (!G.Rogue.active || G.Rogue.state.remaining > 0 && G.Rogue.state.phase !== 'victory') G.Hazards.add(ev[1], true); break;
       case 'fxr': G.FX.ring(ev[1], ev[2], 8, ev[3], ev[4], 0.5, 3); break;
     }
   }

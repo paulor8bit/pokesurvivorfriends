@@ -105,7 +105,7 @@
   async function open(mode) {
     if (G.Social.room?.mode === 'arena') { G.UI.toast('Saia da sala da Arena antes de entrar no Rogue.'); return; }
     if (G.Social.room) {
-      if (mode === 'rogue' && G.Social.room.isHost && !G.Social.room.run) await G.Social.setSlots(G.Social.room.slots, 'rogue');
+      if (['rogue', 'survival'].includes(mode) && G.Social.room.isHost && !G.Social.room.run) await G.Social.setSlots(G.Social.room.slots, mode);
       G.LobbyUI.open(); return;
     }
     if (pendingCode) { openJoin(); return; }
@@ -216,8 +216,8 @@
     if (androidServer) $('lobby-link-note').textContent = internetBase
       ? 'Convite pela internet pronto. Para a mesma rede, use Compartilhar Wi-Fi. Mantenha o jogo aberto no celular anfitrião.'
       : tunnelMessage + (localBase ? ' O convite atual funciona somente no mesmo Wi-Fi.' : ' Conecte ao Wi-Fi ou aguarde o convite pela internet.');
-    const box = $('lobby-members'); box.replaceChildren();
-    for (let i = 0; i < 4; i++) {
+    const box = $('lobby-members'); box.replaceChildren(); box.classList.toggle('rogue-duo', room.mode === 'rogue');
+    for (let i = 0; i < (room.mode === 'rogue' ? 2 : 4); i++) {
       const m = room.members.find(m => (m.slot ?? room.members.indexOf(m)) === i);
       const bot = (room.bots || []).find(b => b.slot === i);
       const card = document.createElement('div'); card.className = 'lob-card' + (m || bot ? '' : ' empty');
@@ -259,7 +259,7 @@
     const resuming = !!room.run && G.Coop.active;
     $('lobby-start').classList.toggle('hidden', !room.isHost && !resuming);
     $('lobby-start').disabled = (!room.isHost && !resuming) || (!room.run && !ready) || busy;
-    $('lobby-start').textContent = G.T(room.run ? 'Continuar partida' : 'Jugar') + ' · ' + room.members.length + ' ' + G.T('jugadores') + (room.bots?.length ? ' + ' + room.bots.length + ' bots' : '');
+    $('lobby-start').textContent = G.T(room.run ? 'Continuar partida' : 'Jugar') + ' · ' + (room.mode === 'rogue' ? (room.members.length + (room.bots?.length || 0)) + '/2 Pokémon' : room.members.length + ' ' + G.T('jugadores') + (room.bots?.length ? ' + ' + room.bots.length + ' bots' : ''));
     $('lobby-note').textContent = G.T(room.run ? 'Los amigos pueden entrar durante la partida y reemplazar bots.' : !room.isHost ? 'Espera a que el anfitrión empiece.' : ready ? 'Puedes jugar ya. Comparte el enlace para que entren tus amigos.' : 'Conectando con tus amigos…');
   }
   async function configureSlot(slot, kind, dex) {

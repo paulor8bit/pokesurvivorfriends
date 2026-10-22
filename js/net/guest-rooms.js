@@ -63,7 +63,7 @@
   async function enter(k, data) {
     try {
       const defaults = G.Bots.state();
-      const slots = Array.from({ length: 3 }, (_, i) => i < defaults.slots && defaults.party[i] ? { kind: 'bot', dex: defaults.party[i] } : { kind: 'friend' });
+      const slots = Array.from({ length: data.mode === 'rogue' ? 1 : 3 }, (_, i) => i < defaults.slots && defaults.party[i] ? { kind: 'bot', dex: defaults.party[i] } : { kind: 'friend' });
       const r = await request(k, { ...data, member: member(), ...(k === 'create' ? { catalog: catalog(), slots } : {}) });
       if (r.ok) applyRoom(r.room);
       return r;

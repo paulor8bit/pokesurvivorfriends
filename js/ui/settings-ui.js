@@ -6,7 +6,7 @@
 G.SettingsUI = (() => {
   const $ = G.UI.$;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const VERSION = '1.3.0 · Rogue, torre da Arena e cooperativo sem cadastro';
+  const VERSION = '1.4.0 · Rogue, torre da Arena e cooperativo sem cadastro';
   const REPO = 'https://github.com/JPTER78/pokesurvivor';
   let tab = 'sound';
   let cancelArenaKey = null;
