@@ -55,7 +55,8 @@ G.Pad = (() => {
   }
   /** En un menú, cartas, pausa o ventana: el mando mueve la selección en vez de al Pokémon. */
   function uiMode() {
-    if (G.ArenaUI?.active && G.ArenaUI.state?.phase === 'battle' && !G.SettingsUI.isOpen) return false;
+    const fight = G.ArenaUI?.active ? G.ArenaUI : G.BeatupUI?.active ? G.BeatupUI : null;
+    if (fight?.state?.phase === 'battle' && !G.SettingsUI.isOpen) return false;
     return G.Game.state !== 'playing' || !!topScreen();
   }
 
@@ -250,9 +251,10 @@ G.Pad = (() => {
       vec = [x, y];
       const ax = p.axes[2] || 0, ay = p.axes[3] || 0;
       if (Math.hypot(ax, ay) > 0.35) { aimVec = [ax, ay]; aimAt = performance.now(); } else aimVec = [0, 0];
-      if (G.ArenaUI?.active) {
-        [BT.A, BT.B, BT.X, BT.Y, BT.LB, BT.RB].forEach((b, i) => { if (hit(b)) G.ArenaUI.padAction(i); });
-        if (hit(BT.START) || hit(BT.BACK)) G.ArenaUI.padAction(6);
+      const fight = G.ArenaUI?.active ? G.ArenaUI : G.BeatupUI?.active ? G.BeatupUI : null;
+      if (fight) {
+        [BT.A, BT.B, BT.X, BT.Y, BT.LB, BT.RB].forEach((b, i) => { if (hit(b)) fight.padAction(i); });
+        if (hit(BT.START) || hit(BT.BACK)) fight.padAction(6);
       } else {
         if (hit(BT.START) || hit(BT.BACK)) G.Input.virtual('escape');
         if (hit(BT.A)) G.Input.virtual('space');

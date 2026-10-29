@@ -23,10 +23,10 @@ function originAllowed(origin, host) {
     return ['http:', 'https:'].includes(url.protocol) && (url.host === host || ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname));
   } catch { return false; }
 }
-function capacityOf(mode) { return mode === 'rogue' || mode === 'arena' ? 2 : 4; }
+function capacityOf(mode) { return ['rogue', 'arena', 'beatup'].includes(mode) ? 2 : 4; }
 function slotsOf(input, catalog, mode) {
   const used = new Set();
-  return Array.from({ length: mode === 'rogue' ? 1 : 3 }, (_, i) => {
+  return Array.from({ length: mode === 'rogue' || mode === 'beatup' ? 1 : 3 }, (_, i) => {
     const slot = input?.[i];
     if (slot?.kind !== 'bot') return { kind: 'friend' };
     const dex = Number(slot.dex);

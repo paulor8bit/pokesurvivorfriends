@@ -6,7 +6,7 @@
 G.SettingsUI = (() => {
   const $ = G.UI.$;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const VERSION = '1.4.0 · Rogue, torre da Arena e cooperativo sem cadastro';
+  const VERSION = '1.5.0 · Beat ’em up, Rogue e Arena';
   const REPO = 'https://github.com/JPTER78/pokesurvivor';
   let tab = 'sound';
   let cancelArenaKey = null;
@@ -92,7 +92,7 @@ G.SettingsUI = (() => {
            : iosTip() ? `<div class="set-row"><div class="grow"><b>Pantalla completa</b><small>${esc(IOS_TIP)}</small></div></div>` : '');
     } else if (tab === 'ctl') {
       const pn = G.Pad.name;
-      box.innerHTML = section('Survivor, Arena e Rogue', 'Ataques da Arena: Num 1–4. Nos três modos: Dash com Espaço e lançar maçã com E, ou os botões na tela. As teclas de dash e maçã são compartilhadas. Clique no atalho abaixo para trocar. Esc cancela.')
+      box.innerHTML = section('Survivor, Rogue, Arena e Beat ’em up', 'Ataques da Arena e Beat ’em up: Num 1–4. Nos quatro modos: Dash com Espaço e lançar maçã com E, ou os botões na tela. As teclas de dash e maçã são compartilhadas. Clique no atalho abaixo para trocar. Esc cancela.')
         + G.ArenaUI.controlKeys().map((code, i) => `<div class="set-row"><b>${i < 4 ? 'Ataque ' + (i + 1) : i === 4 ? 'Dash' : 'Lançar maçã'}</b><button class="btn small" data-arena-key="${i}">${esc(G.ArenaUI.keyLabel(code))}</button></div>`).join('')
         + '<button class="btn small" id="arena-keys-reset">Restaurar controles da Arena</button><p id="arena-key-status" role="status"></p>'
         + section('Con mando', pn

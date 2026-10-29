@@ -4,7 +4,7 @@ G.SurvivorActions = (() => {
   const key = p => p.bot ? 'bot:' + p.slot : p.uid || 'local';
   const authority = () => !G.Coop.active || G.Coop.isHost;
   const players = () => [...(G.Coop.active ? G.Coop.players() : [G.Game.player]), ...G.Bots.list()].filter(Boolean);
-  const usable = () => G.Game.state === 'playing' && !G.ArenaUI.active && !G.SettingsUI.isOpen && !G.Judgment.cinematic &&
+  const usable = () => G.Game.state === 'playing' && !G.ArenaUI.active && !G.BeatupUI?.active && !G.SettingsUI.isOpen && !G.Judgment.cinematic &&
     !['scr-pause', 'scr-lobby', 'scr-friends', 'scr-menu', 'scr-item'].some(G.UI.isOpen);
   function target(from) {
     return players().filter(p => p !== from && !p.dead && p.hp < p.maxHp && Math.hypot(p.x - from.x, p.y - from.y) <= 900)

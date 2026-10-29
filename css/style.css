@@ -920,8 +920,8 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .arena-mon-card > span { color: #c1d4e7; font-size: 12px; }
 .arena-mon-card > canvas { width: 160px; max-width: 100%; height: 180px; object-fit: contain; image-rendering: pixelated; }
 .arena-waiting { height: 125px; display: grid; place-items: center; }
-#arena-portrait-partner .arena-mon-card { background: radial-gradient(ellipse at 50% 45%, #663e37, #271b27 75%); border-color: #9b6b57; }
-#arena-portrait-partner .arena-mon-card > small { color: #ffcc96; }
+:is(#arena-portrait-partner, #beatup-portrait-partner) .arena-mon-card { background: radial-gradient(ellipse at 50% 45%, #663e37, #271b27 75%); border-color: #9b6b57; }
+:is(#arena-portrait-partner, #beatup-portrait-partner) .arena-mon-card > small { color: #ffcc96; }
 .choosing .arena-mon-card { outline: 2px solid #ffe29a; outline-offset: 2px; }
 .arena-bracket-mons { display: inline-flex; vertical-align: middle; margin-right: 5px; }
 .arena-bracket-mons canvas { image-rendering: pixelated; }
@@ -973,11 +973,11 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .arena-invite { display: flex; align-items: end; gap: 10px; margin-top: 20px; }
 .arena-invite label { flex: 1; }
 .arena-room { margin-top: 14px; color: #6edcde; }
-#scr-arena { background: #091424; overflow: auto; touch-action: none; }
-#arena-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+:is(#scr-arena, #scr-beatup) { background: #091424; overflow: auto; touch-action: none; }
+:is(#arena-canvas, #beatup-canvas) { position: absolute; inset: 0; width: 100%; height: 100%; }
 .arena-top { position: absolute; top: max(10px, env(safe-area-inset-top)); left: 16px; right: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 2; gap: 10px; }
 .arena-top b { color: #a8f1eb; font-size: 23px; }
-#arena-status { margin-left: 16px; color: #d1e3ec; }
+:is(#arena-status, #beatup-status) { margin-left: 16px; color: #d1e3ec; }
 .arena-bracket { position: absolute; z-index: 4; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(850px, 94vw); max-height: 80dvh; overflow: auto; padding: 22px; border: 1px solid #427082; border-radius: 18px; background: rgba(9, 24, 39, .97); text-align: center; box-shadow: 0 20px 90px #030a14; }
 .arena-bracket h2 { margin: 0 0 18px; color: #ffe29a; }
 .arena-ladder { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
@@ -995,14 +995,14 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .arena-boss { position: absolute; top: 65px; left: 50%; transform: translateX(-50%); width: min(420px, 60vw); text-align: center; color: #ffdb99; pointer-events: none; background: #091827dc; border-radius: 10px; padding: 5px 12px; }
 .arena-boss meter { display: block; width: 100%; height: 18px; accent-color: #ce82ed; }
 .arena-boss small { display: block; font-size: 12px; }
-#scr-arena:has(.arena-boss:not(.hidden)) #arena-notice { top: 140px; }
+:is(#scr-arena, #scr-beatup):has(.arena-boss:not(.hidden)) :is(#arena-notice, #beatup-notice) { top: 140px; }
 @media (max-width: 700px), (max-height: 500px) {
   .arena-ladder { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .arena-rung { padding: 6px; }
   .arena-rung canvas { width: 52px; }
   .arena-boss { top: 46px; width: 45vw; font-size: 13px; padding: 3px 8px; }
-  #scr-arena:has(.arena-boss:not(.hidden)) #arena-notice { top: 110px; }
-  #arena-status { font-size: 12px; }
+  :is(#scr-arena, #scr-beatup):has(.arena-boss:not(.hidden)) :is(#arena-notice, #beatup-notice) { top: 110px; }
+  :is(#arena-status, #beatup-status) { font-size: 12px; }
 }
 .arena-rounds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; align-items: center; text-align: left; }
 .arena-round h3 { color: #86cdd6; margin: 0 0 8px; }
@@ -1039,7 +1039,7 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 .arena-attacks kbd { position: absolute; left: 7px; top: 4px; font-size: 11px; color: #b2d7e9; }
 .arena-attacks small { display: block; margin-top: 3px; font-size: 12px; color: var(--attack-color); }
 #arena-stick { position: absolute; left: max(22px, env(safe-area-inset-left)); bottom: max(25px, env(safe-area-inset-bottom)); width: 104px; height: 104px; border: 2px solid #6bd7dd66; background: #0d273e99; border-radius: 50%; display: grid; place-items: center; touch-action: none; color: #b8f2f3; font-size: 38px; user-select: none; }
-#arena-notice { position: absolute; top: 68px; left: 15%; right: 15%; text-align: center; color: #ffe29a; text-shadow: 0 2px #000; pointer-events: none; }
+:is(#arena-notice, #beatup-notice) { position: absolute; top: 68px; left: 15%; right: 15%; text-align: center; color: #ffe29a; text-shadow: 0 2px #000; pointer-events: none; }
 #survivor-actions .sprite-action, .arena-attacks .sprite-action { position: relative; padding: 5px 5px 6px; }
 #survivor-actions .action-sprite, .arena-attacks .action-sprite { position: static; display: flex; justify-content: center; align-items: center; height: 48px; margin: 0; font-style: normal; pointer-events: none; }
 #survivor-actions .action-sprite img, .arena-attacks .action-sprite img { display: block; width: 48px; height: 48px; image-rendering: pixelated; filter: drop-shadow(0 2px 0 #04101e); }
@@ -1049,7 +1049,7 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
 #survivor-actions .sprite-action:disabled .action-sprite, .arena-attacks .sprite-action:disabled .action-sprite { filter: saturate(.55); }
 @media (max-width: 700px), (max-height: 500px) {
   .arena-top b { font-size: 17px; }
-  #arena-status { font-size: 13px; margin-left: 9px; }
+  :is(#arena-status, #beatup-status) { font-size: 13px; margin-left: 9px; }
   .arena-attacks { grid-template-columns: repeat(2, 100px); gap: 5px; right: 10px; bottom: 8px; }
   .arena-attacks button { min-height: 51px; padding: 3px 5px; }
   .arena-attacks b { font-size: 12px; margin-top: 14px; }
@@ -1064,3 +1064,7 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   .arena-match > div { padding: 3px 6px; }
   .arena-preview { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+.beatup-stages { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
+#beatup-status { display: inline-block; max-width: 68vw; font-size: 14px; }
+@media(max-height:500px) { .beatup-stages canvas { width: 70px; height: 58px; } #beatup-status { font-size: 11px; max-width: 58vw; } }

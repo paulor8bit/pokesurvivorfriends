@@ -1,8 +1,11 @@
 /* Separate Arena scene: survival combat and saves are never replaced. */
-G.ArenaUI = (() => {
-  const $ = id => document.getElementById(id);
+G.createFightUI = (mode = 'arena') => {
+  const beat = mode === 'beatup', title = beat ? 'Beat ’em up' : 'Arena 2 × 2';
+  const idOf = id => beat ? id.replace(/^arena-/, 'beatup-').replace('scr-arena', 'scr-beatup') : id;
+  const $ = id => document.getElementById(idOf(id));
+  const html = value => beat ? value.replaceAll('id="arena-', 'id="beatup-').replaceAll('Arena 2 × 2', title).replaceAll('da Arena', 'do Beat ’em up').replaceAll('na Arena', 'no Beat ’em up').replaceAll('Link da Arena', 'Link do Beat ’em up').replace('Os rivais também podem pegá-las.', 'Quebre caixas para encontrar mais maçãs.').replace('Quatro ataques manuais, com recargas independentes. Mire no rival mais próximo.', 'Combo, golpe forte, investida e especial: acerte os rivais próximos na mesma faixa.').replace('TORRE DE LUTADORES', 'AVENTURA COOPERATIVA').replace(/<p class="arena-intro">.*?<\/p>/, '<p class="arena-intro">Três fases de avanço lateral. Vença os grupos para liberar o caminho, quebre caixas para encontrar maçãs e enfrente um chefe em cada fase. Jogue com um amigo ou bot.</p>') : value;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const R = G.ArenaRules, defaults = ['Numpad1', 'Numpad2', 'Numpad3', 'Numpad4'];
+  const R = beat ? G.BeatupRules : G.ArenaRules, defaults = ['Numpad1', 'Numpad2', 'Numpad3', 'Numpad4'];
   const keys = () => { const v = G.Settings.get('arenaKeys'); return Array.isArray(v) && v.length === 4 && v.every(k => typeof k === 'string') ? v : defaults.slice(); };
   const label = code => code === 'Space' ? 'Espaço' : code.replace('Numpad', 'Num ').replace('Digit', '').replace('Key', '').replace('Arrow', '');
   function controlKeys() {
@@ -30,19 +33,19 @@ G.ArenaUI = (() => {
   function owned() { return [...new Set([...(Object.keys(G.DB.save?.owned || {}).map(Number)), ...G.STARTERS.map(m => m.dex)])].filter(d => G.DEX_BY[d]); }
   function options(value) { return owned().map(d => `<option value="${d}" ${d === value ? 'selected' : ''}>${esc(G.DEX_BY[d].name)}</option>`).join(''); }
   function message(s) { const el = $('arena-message'); if (el) el.textContent = s; else G.UI.toast(s); }
-  function hasInvite() { return /^#arena=/i.test(location.hash); }
+  function hasInvite() { return new RegExp('^#' + mode + '=', 'i').test(location.hash); }
   function open() {
     if (visible) return;
-    if (G.Coop.active || (G.Game.state !== 'ui' && G.Game.state !== 'over')) { G.UI.toast('Termine a partida atual antes de entrar na Arena.'); return; }
+    if (G.Coop.active || (beat ? G.ArenaUI?.active : G.BeatupUI?.active) || (G.Game.state !== 'ui' && G.Game.state !== 'over')) { G.UI.toast('Termine a partida atual antes de abrir ' + title + '.'); return; }
     visible = true; engine = null; state = null; phase = ''; guest = false; roomId = null;
     seenEvent = 0; seenSerial = -1; stage = null; stageRound = -1; presentationPhase = ''; G.FX.clear();
     config.dex = G.DB.save.partner || 1; config.name = G.Social.me?.name || G.DB.user || 'Treinador';
-    G.Game.toUI(); G.UI.show('scr-arena'); G.UI.chrome(false); setup();
+    G.Game.toUI(); G.UI.show(idOf('scr-arena')); G.UI.chrome(false); setup();
     last = performance.now(); requestAnimationFrame(loop);
   }
   function setup() {
-    const room = G.Social.room, arenaRoom = room?.mode === 'arena';
-    $('scr-arena').innerHTML = `<div class="box arena-setup"><div class="arena-heading"><div><small>TORRE DE LUTADORES</small><h1>Arena 2 × 2</h1></div><button id="arena-back" class="btn">Voltar</button></div>
+    const room = G.Social.room, arenaRoom = room?.mode === mode;
+    $('scr-arena').innerHTML = html(`<div class="box arena-setup"><div class="arena-heading"><div><small>TORRE DE LUTADORES</small><h1>Arena 2 × 2</h1></div><button id="arena-back" class="btn">Voltar</button></div>
       <p class="arena-intro">Suba a torre de lutadores: quatro duplas rivais, dois subchefes e Mewtwo na luta final. Contra os chefes, sua dupla luta 2 contra 1.</p>
       <div class="arena-character-select"><div id="arena-portrait-player"></div><div class="arena-picker"><h2>ESCOLHA SEU POKÉMON</h2><div class="arena-player-tabs"><button id="arena-pick-player" class="btn small">P1 · Você</button><button id="arena-pick-bot" class="btn small">P2 · Bot</button></div><p id="arena-picker-hint" class="sub"></p><div id="arena-pokemon-grid" class="grid arena-pokemon-grid"></div></div><div id="arena-portrait-partner"></div></div>
       <div class="arena-fields"><label>Apelido<input id="arena-name" maxlength="20" value="${esc(config.name)}"></label>
@@ -57,7 +60,7 @@ G.ArenaUI = (() => {
       <p class="sub">Quatro ataques manuais, com recargas independentes. Mire no rival mais próximo. Mova com WASD, setas ou o controle de toque. Você começa sem maçã: ao coletar, recupera 25% do HP e guarda uma para lançar ao parceiro e curar 25% do HP dele. Os rivais também podem pegá-las.</p>
       <div class="row wrap"><button id="arena-start" class="btn gold">Começar com bot</button><button id="arena-create" class="btn">Criar convite</button><button id="arena-controls" class="btn">Configurar teclas</button></div>
       <div class="arena-invite"><label>Entrar com amigo: cole o convite ou código<input id="arena-invite" autocomplete="off" placeholder="Link da Arena ou código"></label><button id="arena-join" class="btn">Entrar</button></div>
-      <div id="arena-room" class="arena-room"></div><p id="arena-message" role="status"></p></div>`;
+      <div id="arena-room" class="arena-room"></div><p id="arena-message" role="status"></p></div>`);
     $('arena-back').onclick = close;
     $('arena-controls').onclick = () => G.SettingsUI.open('ctl');
     if (config.mode !== 'bot') shopTarget = 'dex';
@@ -91,10 +94,10 @@ G.ArenaUI = (() => {
     $('arena-mobility').textContent = `Dash de ${G.DEX_BY[config.dex].name}: alcance ${dash.distance} · recarga ${dash.cooldown}s · ${label(controls[4])}. Lançar maçã ao parceiro: ${label(controls[5])}.`;
     const room = G.Social.room;
     const friend = room?.members.find(m => m.uid !== room.host);
-    $('arena-bot').disabled = config.mode !== 'bot' || room?.mode === 'arena';
-    $('arena-start').textContent = room?.mode === 'arena' ? guest ? 'Aguardando anfitrião' : 'Começar com amigo' : config.mode === 'bot' ? 'Começar com bot' : 'Crie um convite para seu amigo';
-    $('arena-start').disabled = busy || (!!room && (room.mode !== 'arena' || !room.isHost || room.members.length !== 2 || !peerPowers.has(friend?.uid))) || (!room && config.mode === 'friend');
-    $('arena-create').disabled = busy || (!!room && room.mode !== 'arena');
+    $('arena-bot').disabled = config.mode !== 'bot' || room?.mode === mode;
+    $('arena-start').textContent = room?.mode === mode ? guest ? 'Aguardando anfitrião' : 'Começar com amigo' : config.mode === 'bot' ? 'Começar com bot' : 'Crie um convite para seu amigo';
+    $('arena-start').disabled = busy || (!!room && (room.mode !== mode || !room.isHost || room.members.length !== 2 || !peerPowers.has(friend?.uid))) || (!room && config.mode === 'friend');
+    $('arena-create').disabled = busy || (!!room && room.mode !== mode);
     renderSelection(); renderPicker(); renderShop();
   }
   function renderShop() {
@@ -105,7 +108,7 @@ G.ArenaUI = (() => {
     target.value = shopTarget;
     const dex = config[shopTarget], p = powers.profile(dex);
     $('arena-shop-coins').textContent = G.DB.save.coins;
-    $('arena-shop-body').innerHTML = `<h3>${esc(G.DEX_BY[dex].name)}</h3><p>Novos poderes custam ${powers.COST} moedas cada e ficam salvos para este Pokémon na Arena. Equipar ou trocar poderes aprendidos é grátis.</p>
+    $('arena-shop-body').innerHTML = `<h3>${esc(G.DEX_BY[dex].name)}</h3><p>Novos poderes custam ${powers.COST} moedas cada e ficam salvos para este Pokémon nos modos de luta. Equipar ou trocar poderes aprendidos é grátis.</p>
       <div class="arena-power-slots">${p.loadout.map((id, i) => `<button class="btn small ${i === shopSlot ? 'gold' : ''}" data-power-slot="${i}" aria-pressed="${i === shopSlot}">${esc(label(keys()[i]))} · ${esc(G.T(G.Moves.BY_ID[id].name))}</button>`).join('')}</div>
       <p>Escolha o poder para ${esc(label(keys()[shopSlot]))}. Um poder já equipado troca de posição.</p>
       <div class="arena-power-grid">${powers.pool(dex).map(id => {
@@ -125,7 +128,7 @@ G.ArenaUI = (() => {
     });
   }
   function sendPowers() {
-    if (guest && G.Social.room?.mode === 'arena') G.Net.toHost({ k: 'arena-ready', room: roomId, moves: powers.profile(config.dex).loadout });
+    if (guest && G.Social.room?.mode === mode) G.Net.toHost({ k: mode + '-ready', room: roomId, moves: powers.profile(config.dex).loadout });
   }
   function portrait(dex, title, name) {
     const card = document.createElement('article'); card.className = 'arena-mon-card';
@@ -141,14 +144,14 @@ G.ArenaUI = (() => {
   function renderSelection() {
     const box = $('arena-portrait-player'), room = G.Social.room;
     if (!box) return; box.replaceChildren(portrait(config.dex, 'P1 · SEU POKÉMON', config.name || 'Você'));
-    const friend = room?.mode === 'arena' && room.members.find(m => m.uid !== G.Social.uid);
-    $('arena-portrait-partner').replaceChildren(config.mode === 'bot' ? portrait(config.bot, 'P2 · PARCEIRO BOT', 'Seu companheiro na Arena') : portrait(friend?.dex, 'AMIGO CONVIDADO', friend?.name || 'Aguardando seu amigo'));
+    const friend = room?.mode === mode && room.members.find(m => m.uid !== G.Social.uid);
+    $('arena-portrait-partner').replaceChildren(config.mode === 'bot' ? portrait(config.bot, 'P2 · PARCEIRO BOT', 'Seu companheiro em ' + title) : portrait(friend?.dex, 'AMIGO CONVIDADO', friend?.name || 'Aguardando seu amigo'));
     box.classList.toggle('choosing', pickerTarget === 'dex'); $('arena-portrait-partner').classList.toggle('choosing', pickerTarget === 'bot');
-    $('arena-pick-player').disabled = room?.mode === 'arena';
-    $('arena-pick-bot').disabled = config.mode !== 'bot' || room?.mode === 'arena';
+    $('arena-pick-player').disabled = room?.mode === mode;
+    $('arena-pick-bot').disabled = config.mode !== 'bot' || room?.mode === mode;
   }
   function renderPicker() {
-    const locked = G.Social.room?.mode === 'arena';
+    const locked = G.Social.room?.mode === mode;
     if (config.mode !== 'bot') pickerTarget = 'dex';
     $('arena-pick-player').classList.toggle('gold', pickerTarget === 'dex'); $('arena-pick-bot').classList.toggle('gold', pickerTarget === 'bot');
     $('arena-picker-hint').textContent = locked ? 'Dupla confirmada. Aguarde o início do campeonato.' : pickerTarget === 'dex' ? 'Escolha o seu personagem na grade.' : 'Escolha o Pokémon do seu parceiro bot.';
@@ -181,7 +184,7 @@ G.ArenaUI = (() => {
     if (G.Social.room) { message('Saia da sala atual antes de criar outra.'); return; }
     if (!G.Social.setName(config.name)) { message('Use um apelido de 2 a 20 letras ou números.'); return; }
     busy = true; preview();
-    try { const r = await G.Social.createRoom({ mode: 'arena', choice: choice() }); if (!r.ok) throw Error(r.error); setup(); await share(); }
+    try { const r = await G.Social.createRoom({ mode, choice: choice() }); if (!r.ok) throw Error(r.error); setup(); await share(); }
     catch (e) { message(e.message); } finally { busy = false; if ($('arena-start')) preview(); }
   }
   async function share() {
@@ -189,9 +192,9 @@ G.ArenaUI = (() => {
       const info = await (await fetch('/api/server', { cache: 'no-store' })).json();
       const base = G.Social.room.isHost ? info.publicUrl || info.localUrl || location.origin : G.Social.serverBase;
       if (/^(localhost|127\.0\.0\.1)$/.test(new URL(base).hostname)) { message('O convite público está sendo preparado. Tente compartilhar novamente em alguns segundos.'); return; }
-      const link = new URL('/#arena=' + G.Social.room.id, base).href;
+      const link = new URL('/#' + mode + '=' + G.Social.room.id, base).href;
       if (/PokeSurvivorAndroid\//.test(navigator.userAgent)) location.href = 'pokesurvivor://share?url=' + encodeURIComponent(link);
-      else if (navigator.share) await navigator.share({ title: 'Arena 2 × 2', url: link });
+      else if (navigator.share) await navigator.share({ title, url: link });
       else if (navigator.clipboard) await navigator.clipboard.writeText(link);
       $('arena-invite').value = link; message('Convite pronto. Envie ao seu amigo e mantenha o jogo aberto.');
     } catch (e) { if (e.name !== 'AbortError') message('Não foi possível compartilhar. Tente novamente.'); }
@@ -202,51 +205,53 @@ G.ArenaUI = (() => {
     let code = $('arena-invite').value.trim();
     try {
       let base = location.origin;
-      if (/^https?:\/\//i.test(code)) { const url = new URL(code); base = url.origin; code = new URLSearchParams(url.hash.slice(1)).get('arena') || ''; }
-      code = code.replace(/[\s-]/g, '').toUpperCase(); if (!/^[A-F0-9]{12}$/.test(code)) throw Error('Convite da Arena inválido.');
+      if (/^https?:\/\//i.test(code)) { const url = new URL(code); base = url.origin; code = new URLSearchParams(url.hash.slice(1)).get(mode) || ''; }
+      code = code.replace(/[\s-]/g, '').toUpperCase(); if (!/^[A-F0-9]{12}$/.test(code)) throw Error('Convite de ' + title + ' inválido.');
       if (!G.Social.setName(config.name)) throw Error('Use um apelido de 2 a 20 letras ou números.');
       busy = true; G.Social.setServer(base); await G.Social.choosePokemon(choice());
       const r = await G.Social.joinRoom(code); if (!r.ok) throw Error(r.error);
-      if (r.room.mode !== 'arena') { await G.Social.leaveRoom(); throw Error('Este convite é de sobrevivência. Use a tela Jogar.'); }
+      if (r.room.mode !== mode) { await G.Social.leaveRoom(); throw Error('Este convite é de sobrevivência. Use a tela Jogar.'); }
       guest = true; roomId = r.room.id; setup();
     } catch (e) { message(e.message); } finally { busy = false; if ($('arena-start')) preview(); }
   }
   async function start() {
     if (busy) return; readConfig(); const room = G.Social.room;
-    if (room && (room.mode !== 'arena' || !room.isHost || room.members.length !== 2 || !peerPowers.has(room.members.find(m => m.uid !== room.host)?.uid))) return;
+    if (room && (room.mode !== mode || !room.isHost || room.members.length !== 2 || !peerPowers.has(room.members.find(m => m.uid !== room.host)?.uid))) return;
     if (!room && config.mode !== 'bot') return;
     busy = true;
     try {
       if (room) { const result = await G.Social.startRun(Math.floor(Math.random() * 1000000)); if (!result.ok) throw Error(result.error); }
       guest = false; roomId = room?.id || null; humanId = '0:0';
       const friends = room ? room.members.map(m => spec(m.dex, m.name, true, m.uid === room.host ? powers.profile(m.dex).loadout : peerPowers.get(m.uid))) : [spec(config.dex, config.name || 'Você', true, powers.profile(config.dex).loadout), spec(config.bot, 'Parceiro bot', false, powers.profile(config.bot).loadout)];
-      const bossDex = new Set(R.ENCOUNTERS.filter(e => e.dex).map(e => e.dex));
+      const bossDex = new Set(beat ? R.STAGES.map(e => e.boss) : R.ENCOUNTERS.filter(e => e.dex).map(e => e.dex));
       const pool = G.DEX.filter(m => G.SPRITE_META[m.dex] && !bossDex.has(m.dex));
       const teams = [{ name: 'Sua dupla', fighters: friends }];
-      for (const fight of R.ENCOUNTERS) {
+      for (const fight of beat ? [] : R.ENCOUNTERS) {
         const fighters = fight.dex ? [spec(fight.dex, G.DEX_BY[fight.dex].name)] : [0, 1].map(() => { const m = G.U.pick(pool); return spec(m.dex, m.name); });
         teams.push({ name: fight.title, fighters });
       }
-      engine = new R.Tournament(teams, Math.floor(Math.random() * 0xffffffff), (type, types) => G.Types.mult(type, types));
+      engine = beat ? new R.Campaign(friends, G.DEX.filter(m => G.SPRITE_META[m.dex]).map(m => spec(m.dex, m.name)), Math.floor(Math.random() * 0xffffffff), (type, types) => G.Types.mult(type, types))
+        : new R.Tournament(teams, Math.floor(Math.random() * 0xffffffff), (type, types) => G.Types.mult(type, types));
       state = engine.state; phase = ''; scene(); sendFrame();
     } catch (e) { message(e.message); } finally { busy = false; }
   }
   function scene() {
     G.UI.hideAll(); $('scr-arena').classList.remove('hidden'); G.UI.chrome(false);
-    $('scr-arena').innerHTML = `<canvas id="arena-canvas" aria-label="Campo de batalha da Arena"></canvas>
+    $('scr-arena').innerHTML = html(`<canvas id="arena-canvas" aria-label="Campo de batalha da Arena"></canvas>
       <div class="arena-top"><div><b>Arena 2 × 2</b><span id="arena-status"></span></div><div><button id="arena-settings" class="btn small">Teclas</button><button id="arena-exit" class="btn small">Sair</button></div></div>
       <div id="arena-bracket" class="arena-bracket"></div><div id="arena-notice" role="status"></div>
       <div id="arena-boss" class="arena-boss hidden"><b></b><meter min="0"></meter><small></small></div>
-      <div id="arena-attacks" class="arena-attacks"></div>`;
+      <div id="arena-attacks" class="arena-attacks"></div>`);
     G.Touch.attach($('arena-canvas'));
     $('arena-settings').onclick = () => G.SettingsUI.open('ctl'); $('arena-exit').onclick = close;
     $('arena-attacks').innerHTML = R.SKILLS.map((s, i) => `<button data-arena-attack="${i}" aria-label="Ataque ${i + 1}"><i></i><kbd></kbd><b></b><small></small></button>`).join('');
-    $('arena-attacks').insertAdjacentHTML('beforeend', `<button id="arena-dash" class="sprite-action" data-arena-action="4" aria-label="Dash"><i class="action-sprite">${G.Icons.html('dash', 48)}</i><kbd></kbd><b>Dash</b><small></small></button>
-      <button id="arena-apple" class="sprite-action" data-arena-action="5" aria-label="Lançar maçã ao parceiro"><i class="action-sprite">${G.Icons.html('berry', 48)}</i><kbd></kbd><b></b><small></small></button>`);
+    $('arena-attacks').insertAdjacentHTML('beforeend', html(`<button id="arena-dash" class="sprite-action" data-arena-action="4" aria-label="Dash"><i class="action-sprite">${G.Icons.html('dash', 48)}</i><kbd></kbd><b>Dash</b><small></small></button>
+      <button id="arena-apple" class="sprite-action" data-arena-action="5" aria-label="Lançar maçã ao parceiro"><i class="action-sprite">${G.Icons.html('berry', 48)}</i><kbd></kbd><b></b><small></small></button>`));
     $('arena-attacks').querySelectorAll('button').forEach(b => b.onpointerdown = e => { e.preventDefault(); if (!b.disabled && attacks.length < 6) attacks.push(Number(b.dataset.arenaAttack ?? b.dataset.arenaAction)); });
     phase = ''; held.clear(); attacks = []; lastFrame = performance.now(); renderPanel();
   }
   function bracket() {
+    if (beat) { beatPanel(); return; }
     const s = state, box = $('arena-bracket');
     box.replaceChildren();
     const title = document.createElement('h2'); title.textContent = s.phase === 'champion' ? 'Torre conquistada! Sua dupla é campeã!' : s.phase === 'eliminated' ? 'K.O. · Fim da jornada' : s.phase === 'draw' ? 'Duplo K.O.! Vamos repetir a luta.' : s.round > 0 ? 'Vitória! Próximo desafio' : 'Torre de lutadores'; box.appendChild(title);
@@ -271,17 +276,27 @@ G.ArenaUI = (() => {
     else if (guest && s.phase === 'bracket') { const p = document.createElement('p'); p.textContent = 'Aguardando o anfitrião iniciar a rodada.'; box.appendChild(p); }
     if (['champion', 'eliminated'].includes(s.phase)) { const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Voltar ao menu'; b.onclick = close; box.appendChild(b); }
   }
+  function beatPanel() {
+    const s = state, box = $('arena-bracket'); box.replaceChildren();
+    const h = document.createElement('h2'); h.textContent = s.phase === 'champion' ? 'Ruas libertadas! A dupla venceu!' : s.phase === 'eliminated' ? 'A dupla caiu · Fim da aventura' : `Fase ${s.round + 1}/3 · ${R.STAGES[s.round].title}`; box.appendChild(h);
+    const p = document.createElement('p'); p.textContent = s.phase === 'champion' || s.phase === 'eliminated' ? `Pontuação: ${s.score} · Maior combo: ${s.bestCombo}` : 'Avance para a direita. Vença cada grupo para liberar o caminho e enfrente o chefe no fim da fase. Quebre caixas para achar maçãs e fique perto do parceiro caído para ajudá-lo.'; box.appendChild(p);
+    const ladder = document.createElement('div'); ladder.className = 'beatup-stages';
+    R.STAGES.forEach((stage, i) => { const card = document.createElement('div'); card.className = 'arena-rung' + (i < s.round || s.phase === 'champion' ? ' won' : i === s.round ? ' current' : ''); card.appendChild(G.UI.spriteCanvas(stage.boss, 110, 90, { hero: true, scale: 2 })); const name = document.createElement('b'); name.textContent = stage.title; card.appendChild(name); ladder.appendChild(card); }); box.appendChild(ladder);
+    if (s.phase === 'bracket' && !guest) { const b = document.createElement('button'); b.id = idOf('arena-next'); b.className = 'btn gold'; b.textContent = s.round ? 'Próxima fase' : 'Começar aventura'; b.onclick = () => { engine.begin(); renderPanel(); sendFrame(); }; box.appendChild(b); }
+    else if (s.phase === 'bracket') { const wait = document.createElement('p'); wait.textContent = 'Aguardando o anfitrião começar a fase.'; box.appendChild(wait); }
+    else { const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'Voltar ao menu'; b.onclick = close; box.appendChild(b); }
+  }
   function renderPanel() {
     if (!state || !$('arena-canvas')) return;
     const battle = state.phase === 'battle';
     $('arena-bracket').classList.toggle('hidden', battle); $('arena-attacks').classList.toggle('hidden', !battle);
     if (phase !== state.phase + state.round) { phase = state.phase + state.round; G.Touch.reset(); if (!battle) bracket(); }
     const fighter = state.fighters.find(f => f.id === humanId);
-    const fight = R.encounter(state.round), boss = state.fighters.find(f => ['mini', 'boss'].includes(f.rank));
-    $('arena-status').textContent = `${state.round + 1}/7 · ${fight.title} · ${fight.kind === 'duo' ? '2 × 2' : '2 × 1'}` + (battle ? ' · ' + Math.ceil(Math.max(0, fight.limit - state.time)) + 's' : '');
-    $('arena-notice').textContent = guest && performance.now() - lastFrame > 2500 ? 'Aguardando conexão com o anfitrião…' : battle && fighter?.hp <= 0 ? 'Você caiu. Sua dupla ainda pode vencer!' : battle && state.time > fight.limit ? 'Prorrogação: todos perdem a mesma porcentagem de HP.' : battle && state.time < 1.3 ? 'LUTEM!' : battle && state.warnings?.length ? 'Cuidado! Saia dos círculos!' : '';
+    const fight = beat ? R.STAGES[state.round] : R.encounter(state.round), boss = state.fighters.find(f => ['mini', 'boss'].includes(f.rank) && (!beat || f.hp > 0));
+    $('arena-status').textContent = beat ? `${state.round + 1}/3 · ${fight.title} · Grupo ${Math.min(3, state.wave + 1)}/3 · ${state.score} pts${state.combo > 1 ? ' · ' + state.combo + ' COMBO!' : ''}` : `${state.round + 1}/7 · ${fight.title} · ${fight.kind === 'duo' ? '2 × 2' : '2 × 1'}` + (battle ? ' · ' + Math.ceil(Math.max(0, fight.limit - state.time)) + 's' : '');
+    $('arena-notice').textContent = guest && performance.now() - lastFrame > 2500 ? 'Aguardando conexão com o anfitrião…' : battle && fighter?.hp <= 0 ? beat ? 'Você caiu! Seu parceiro pode ajudar ficando ao seu lado.' : 'Você caiu. Sua dupla ainda pode vencer!' : beat && battle ? state.warnings.length ? 'Desvie do ataque do chefe!' : state.fighting ? 'Vença o grupo para liberar o caminho!' : 'SIGA → Avancem juntos!' : battle && state.time > fight.limit ? 'Prorrogação: todos perdem a mesma porcentagem de HP.' : battle && state.time < 1.3 ? 'LUTEM!' : battle && state.warnings?.length ? 'Cuidado! Saia dos círculos!' : '';
     $('arena-boss').classList.toggle('hidden', !battle || !boss);
-    if (boss) { $('arena-boss').querySelector('b').textContent = fight.title; const meter = $('arena-boss').querySelector('meter'); meter.max = boss.maxHp; meter.value = boss.hp; $('arena-boss').querySelector('small').textContent = Math.ceil(boss.hp) + ' / ' + boss.maxHp + ' HP'; }
+    if (boss) { $('arena-boss').querySelector('b').textContent = beat ? G.DEX_BY[boss.dex].name : fight.title; const meter = $('arena-boss').querySelector('meter'); meter.max = boss.maxHp; meter.value = boss.hp; $('arena-boss').querySelector('small').textContent = Math.ceil(boss.hp) + ' / ' + boss.maxHp + ' HP'; }
     if (fighter) $('arena-attacks').querySelectorAll('button').forEach((b, i) => {
       if (i >= 4) return;
       const cd = fighter.cooldowns[i]; b.disabled = fighter.hp <= 0 || cd > 0 || G.SettingsUI.isOpen;
@@ -323,7 +338,7 @@ G.ArenaUI = (() => {
     const s = state, key = s.phase + ':' + s.serial;
     if (s.serial !== seenSerial) { seenSerial = s.serial; G.FX.clear(); anims.clear(); }
     if (key !== presentationPhase) {
-      if (s.phase === 'battle') { G.Audio.music(G.BIOME_MUSIC[s.round % 3]); G.Audio.sfx('boss'); }
+      if (s.phase === 'battle') { G.Audio.music(beat ? 'beatup' : G.BIOME_MUSIC[s.round % 3]); G.Audio.sfx('boss'); }
       else if (s.phase === 'champion') { G.Audio.music('village'); G.Audio.sfx('legend'); }
       else if (s.phase === 'eliminated') { G.Audio.music('village'); G.Audio.sfx('gameover'); }
       else if (s.phase === 'bracket' && presentationPhase.startsWith('battle')) { G.Audio.music('village'); G.Audio.sfx('levelup'); }
@@ -333,9 +348,10 @@ G.ArenaUI = (() => {
       if (e.id <= seenEvent) continue; seenEvent = e.id;
       const move = G.Moves.BY_ID[e.move] || { id: '', type: e.type || 'normal' }, vis = G.VFX.forMove(move), col = G.U.TYPE_COLOR[e.type] || '#fff';
       if (e.kind === 'cast') {
-        const kind = e.index === 2 ? 'melee' : e.index === 3 ? 'nova' : move.kind || 'projectile';
+        const kind = e.index === 2 || beat && e.index < 2 ? 'melee' : e.index === 3 ? 'nova' : move.kind || 'projectile';
         G.Audio.sfx('shot', { kind, type: e.type });
-        if (e.index < 2) { G.FX.sp('impact', vis.pal, e.x + Math.cos(e.angle) * 24, e.y - G.LIFT + Math.sin(e.angle) * 24, { life: 0.15, scale: 1 }); }
+        if (beat && e.index < 2) { G.FX.slash(e.x + Math.cos(e.angle) * 55, e.y - G.LIFT, e.angle, e.index ? 80 : 50, 2, col, vis); G.FX.sp('impact', vis.pal, e.x + Math.cos(e.angle) * 55, e.y - G.LIFT, { life: 0.18 }); }
+        else if (e.index < 2) { G.FX.sp('impact', vis.pal, e.x + Math.cos(e.angle) * 24, e.y - G.LIFT + Math.sin(e.angle) * 24, { life: 0.15, scale: 1 }); }
         else if (e.index === 2) {
           for (let d = 0; d < R.SKILLS[2].range; d += 28) G.FX.sp(vis.proj, vis.pal, e.x + Math.cos(e.angle) * d, e.y + Math.sin(e.angle) * d - G.LIFT, { life: 0.25, angle: e.angle });
           G.FX.slash(e.x + Math.cos(e.angle) * 120, e.y + Math.sin(e.angle) * 120 - G.LIFT, e.angle, 60, 2.3, col, vis);
@@ -360,7 +376,8 @@ G.ArenaUI = (() => {
         G.Audio.sfx('boss');
       } else if (e.kind === 'slam') {
         G.FX.ring(e.x, e.y, 8, e.radius, col, 0.5, 5); G.FX.burst(e.x, e.y, col, 20, 160); G.Audio.sfx('hit');
-      }
+      } else if (e.kind === 'wave') { G.Audio.sfx(e.boss ? 'boss' : 'confirm'); }
+      else if (e.kind === 'go') { G.Audio.sfx('levelup'); }
     }
     G.FX.update(dt);
   }
@@ -370,7 +387,9 @@ G.ArenaUI = (() => {
     if (cv.width !== Math.round(width * dpr) || cv.height !== Math.round(height * dpr)) { cv.width = Math.round(width * dpr); cv.height = Math.round(height * dpr); }
     const ctx = cv.getContext('2d'), scale = Math.min(width / R.WIDTH, height / R.HEIGHT), ox = (width - R.WIDTH * scale) / 2, oy = (height - R.HEIGHT * scale) / 2;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#091424'; ctx.fillRect(0, 0, width, height); ctx.translate(ox, oy); ctx.scale(scale, scale);
-    ctx.imageSmoothingEnabled = false; ctx.drawImage(nativeStage(state.round), 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    if (beat) { G.BeatupArt.draw(ctx, state); ctx.translate(-(state.camera || 0), 0); }
+    else ctx.drawImage(nativeStage(state.round), 0, 0);
     for (const z of state.warnings || []) {
       ctx.fillStyle = '#ff566525'; ctx.strokeStyle = '#ffcb72'; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.arc(z.x, z.y, z.radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
@@ -411,7 +430,7 @@ G.ArenaUI = (() => {
   }
   function sendFrame(to) {
     if (!engine || !roomId) return;
-    const msg = { k: 'arena-frame', room: roomId, state: engine.state };
+    const msg = { k: mode + '-frame', room: roomId, state: engine.state };
     if (to) G.Net.send(to, msg); else G.Net.broadcast(msg);
   }
   function loop(now) {
@@ -423,7 +442,7 @@ G.ArenaUI = (() => {
       if (now - sendAt > 50) {
         const action = blocked ? undefined : attacks.shift();
         const input = { x, y, attack: action < 4 ? action : undefined, dash: action === 4, apple: action === 5 };
-        if (guest) G.Net.toHost({ k: 'arena-input', room: roomId, ...input }); else engine.input(humanId, input);
+        if (guest) G.Net.toHost({ k: mode + '-input', room: roomId, ...input }); else engine.input(humanId, input);
         sendAt = now;
       }
       if (!guest) { if (roomId || !blocked) engine.step(dt); if (now - readyAt > 85) { sendFrame(); readyAt = now; } }
@@ -436,7 +455,7 @@ G.ArenaUI = (() => {
     if (busy) return;
     visible = false; engine = null; state = null; held.clear(); G.Touch.attach($('game')); attacks = []; anims.clear(); G.FX.clear(); stage = null;
     $('scr-arena').classList.add('hidden');
-    if (G.Social.room?.mode === 'arena') await G.Social.leaveRoom();
+    if (G.Social.room?.mode === mode) await G.Social.leaveRoom();
     roomId = null; peerPowers.clear(); if (hasInvite()) history.replaceState(null, '', location.pathname + location.search);
     G.Flow.goMenu();
   }
@@ -447,15 +466,15 @@ G.ArenaUI = (() => {
       if (e.code === 'Escape') { e.preventDefault(); G.Input.endFrame(); held.clear(); G.SettingsUI.open('ctl'); return; }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const index = controlKeys().indexOf(e.code);
-      if (index >= 0) { e.preventDefault(); if (!e.repeat && attacks.length < 6) attacks.push(index); }
+      if (index >= 0) { e.preventDefault(); if ((!e.repeat || beat && index === 0) && attacks.length < 6) attacks.push(index); }
       held.add(e.code);
     });
     addEventListener('keyup', e => held.delete(e.code)); addEventListener('blur', () => { held.clear(); attacks = []; G.Touch.reset(); });
     G.Social.on(() => {
       if (!visible) return;
       const room = G.Social.room;
-      if (roomId && (!room || room.id !== roomId)) { visible = false; state = null; engine = null; roomId = null; G.Touch.attach($('game')); G.FX.clear(); stage = null; $('scr-arena').classList.add('hidden'); G.UI.toast('A sala da Arena foi encerrada.'); G.Flow.goMenu(); return; }
-      if (room?.mode === 'arena') {
+      if (roomId && (!room || room.id !== roomId)) { visible = false; state = null; engine = null; roomId = null; G.Touch.attach($('game')); G.FX.clear(); stage = null; $('scr-arena').classList.add('hidden'); G.UI.toast('A sala de ' + title + ' foi encerrada.'); G.Flow.goMenu(); return; }
+      if (room?.mode === mode) {
         roomId = room.id; guest = !room.isHost;
         if (engine) {
           const friend = room.members.find(m => m.uid !== room.host);
@@ -467,10 +486,10 @@ G.ArenaUI = (() => {
     });
     G.Net.on((from, msg) => {
       const room = G.Social.room;
-      if (!visible || !room || room.mode !== 'arena' || msg?.room !== room.id) return;
+      if (!visible || !room || room.mode !== mode || msg?.room !== room.id) return;
       if (room.isHost && room.members.some(m => m.uid === from && m.uid !== room.host)) {
-        if (msg.k === 'arena-input' && engine) engine.input('0:1', msg);
-        if (msg.k === 'arena-ready') {
+        if (msg.k === mode + '-input' && engine) engine.input('0:1', msg);
+        if (msg.k === mode + '-ready') {
           if (!engine && Array.isArray(msg.moves)) {
             const member = room.members.find(m => m.uid === from);
             const next = powers.normalize(member.dex, msg.moves);
@@ -481,7 +500,7 @@ G.ArenaUI = (() => {
           }
           if (engine) sendFrame(from);
         }
-      } else if (!room.isHost && from === room.host && msg.k === 'arena-frame' && room.run && msg.state?.teams?.length === 8) {
+      } else if (!room.isHost && from === room.host && msg.k === mode + '-frame' && room.run && (beat ? msg.state?.mode === 'beatup' && msg.state?.teams?.length === 1 : msg.state?.teams?.length === 8)) {
         state = msg.state; humanId = '0:1'; guest = true; roomId = room.id;
         if (!$('arena-canvas')) scene(); lastFrame = performance.now();
       }
@@ -489,4 +508,6 @@ G.ArenaUI = (() => {
   }
   function padAction(i) { if (!state || state.phase !== 'battle' || G.SettingsUI.isOpen) return; if (i === 6) { attacks = []; G.Touch.reset(); G.SettingsUI.open('ctl'); } else if (i >= 0 && i < 6 && attacks.length < 6) attacks.push(i); }
   return { init, open, close, hasInvite, keys, controlKeys, setControlKeys, keyLabel: label, defaults, padAction, get state() { return state; }, get active() { return visible; } };
-})();
+};
+G.ArenaUI = G.createFightUI('arena');
+G.BeatupUI = G.createFightUI('beatup');

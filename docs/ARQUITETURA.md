@@ -41,7 +41,7 @@ a bênção selecionada só é aplicada ao trocar de caverna. A semente, seçõe
 estado da porta e bênçãos entram nos quadros e no retrato de entrada tardia.
 Cada jogador aplica cada bênção uma só vez;
 bots que retornam recebem as bênçãos que perderam. Escala e categoria de chefe
-também são transmitidas. O campo `room.mode` vale `survival`, `rogue` ou `arena`;
+também são transmitidas. O campo `room.mode` vale `survival`, `rogue`, `arena` ou `beatup`;
 apenas o anfitrião muda entre Survivor/Rogue antes da run, em Windows e Android.
 
 Rogue limita a equipe a dois Pokémon. Os dois servidores normalizam sua lista
@@ -65,6 +65,23 @@ No Survivor, `Player` executa o dash com a velocidade efetiva e verifica colisõ
 `npm run build` gera o jogo, monta os arquivos Electron em `.runtime/desktop-package`, verifica a integridade do pacote e produz um único executável em `dist/desktop`. O túnel é incluído no pacote. O usuário final não precisa de Node.js.
 
 A pasta `.runtime` contém apenas ferramentas, caches e saídas intermediárias. A pasta `dist/desktop/PokeSurvivor-data` pode conter o progresso real do usuário e deve ser preservada.
+
+## Beat ’em up
+
+`js/systems/beatup.js` simula uma campanha independente de três fases laterais,
+com dois grupos e um chefe em cada uma. Câmera, bloqueios de avanço, golpes por
+faixa, combos, caixas quebráveis, pontuação e resgate do parceiro são controlados
+pelo anfitrião. A campanha reutiliza as regras de entrada, dash, maçã, cura e
+eventos de `ArenaRules`, sem usar o torneio ou a progressão da Arena.
+`js/ui/beatup-art.js` compõe os cenários urbanos com pixels e tiles nativos.
+
+`createFightUI` cria duas telas independentes, `ArenaUI` e `BeatupUI`, com estado,
+seleção, canvas e mensagens próprios. Compartilham seleção de Pokémon, treino de
+poderes, atalhos, controles de toque/controle físico e apresentação dos sprites.
+O Beat ’em up usa `#beatup=` e mensagens `beatup-ready`, `beatup-input` e
+`beatup-frame`. Os servidores Windows e Android limitam a sala a dois humanos e
+bloqueiam entrada e troca de modo durante a campanha. Ao desconectar, o parceiro
+vira bot. Saves e moedas não recebem uma nova estrutura de persistência.
 
 ## Escopo atual
 

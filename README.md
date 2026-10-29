@@ -8,7 +8,7 @@ O foco deste projeto é um aplicativo Windows para jogar solo ou criar salas tem
 
 ## Baixar e instalar
 
-- **[Baixar para Windows x64](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Online-1.4.0-x64.exe)** — aplicativo portátil; baixe e abra o executável. Mantenha a pasta de dados criada ao lado dele para preservar o progresso.
+- **[Baixar para Windows x64](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Online-1.5.0-x64.exe)** — aplicativo portátil; baixe e abra o executável. Mantenha a pasta de dados criada ao lado dele para preservar o progresso.
 - **[Baixar APK Android](https://github.com/paulor8bit/pokesurvivorfriends/releases/latest/download/PokeSurvivor-Android.apk)** — versão de teste para Android 8 ou superior, ARM64. Instale o APK no celular; veja [as instruções e limitações](docs/ANDROID.md).
 - [Todas as versões e arquivos de verificação](https://github.com/paulor8bit/pokesurvivorfriends/releases).
 
@@ -17,7 +17,7 @@ Não é necessário baixar o código-fonte nem instalar Node.js para jogar.
 ## Jogar
 
 Abra `PokéSurvivor Online.lnk`, `Jogar.bat` ou o executável em `dist/desktop`.
-Escolha **Survivor**, **Rogue** ou **Arena** na tela inicial. No Survivor e Rogue, escolha **Bot** ou **Amigo convidado** para cada uma das três vagas. Você pode começar sozinho e compartilhar o convite a qualquer momento. Um amigo que entra durante a partida ocupa uma vaga livre ou substitui um bot; a sala só fica cheia com quatro jogadores humanos. O computador do anfitrião e o aplicativo precisam permanecer abertos. O túnel gratuito gera um endereço temporário, que muda ao reiniciar.
+Escolha **Survivor**, **Rogue**, **Arena** ou **Beat ’em up** na tela inicial. No Survivor, escolha **Bot** ou **Amigo convidado** para cada uma das três vagas; o Rogue tem uma vaga de parceiro. Nesses dois modos você pode começar sozinho e compartilhar o convite durante a partida. Um amigo ocupa uma vaga livre ou substitui um bot; o limite é de quatro humanos no Survivor e dois no Rogue. O computador do anfitrião e o aplicativo precisam permanecer abertos. O túnel gratuito gera um endereço temporário, que muda ao reiniciar.
 
 O progresso do anfitrião permanece nos dados locais do aplicativo. **Não apague `dist/desktop/PokeSurvivor-data`**: ela pode conter seu salvamento. Para convidados, cada endereço temporário tem seu próprio armazenamento no navegador.
 
@@ -53,6 +53,27 @@ substituir o bot; ao sair, o bot volta. Um terceiro jogador não pode entrar.
 Esse limite vale no Windows e no Android. A equipe salva de Survivor e seus
 treinamentos são preservados. Dash e maçãs compartilhadas também funcionam. O anfitrião
 escolhe o modo antes de começar, controla as hordas e escolhe a bênção da equipe.
+
+## Beat ’em up
+
+Modo próprio no menu, inspirado nos jogos de avanço lateral como Streets of Rage.
+Escolha seu Pokémon e um bot ou convide um amigo antes de começar. Avancem juntos
+para a direita, vençam os grupos para liberar o caminho e enfrentem os três chefes:
+Machamp na Praça Verdante, Gengar nas Docas da Meia-Noite e Tyranitar na Avenida das Brasas.
+
+Use WASD, setas, joystick de toque ou controle para se mover. Num 1 faz combos,
+Num 2 aplica um golpe forte, Num 3 faz uma investida e Num 4 ativa o especial.
+Os golpes atingem rivais próximos na mesma faixa; o especial acerta ao redor.
+Espaço usa o dash, e E lança uma maçã ao parceiro ferido. Todos os atalhos podem
+ser alterados nos ajustes e também têm botões na tela.
+
+Quebre caixas para encontrar maçãs e fique perto do parceiro caído por alguns
+segundos para ajudá-lo. Se os dois caírem, a aventura acaba. Entre fases, a dupla
+recupera parte do HP. Pontuação e maior combo aparecem ao terminar.
+Usa os sprites, efeitos e sons do jogo, com cenários urbanos e música própria.
+Os poderes equipados são compartilhados com a Arena. O convite usa `#beatup=`;
+a sala comporta dois jogadores e fecha a entrada ao iniciar. Se o amigo sair,
+um bot assume até o fim da aventura.
 
 ## Arena 2 × 2
 

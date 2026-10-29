@@ -11,13 +11,15 @@ G.MenuUI = (() => {
 
   function init() {
     G.ArenaUI.init();
-    const ICON = { rogue: 'rift', arena: 'trophy', play: 'ball', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', bots: 'friends', rank: 'trophy', settings: 'gear' };
+    G.BeatupUI.init();
+    const ICON = { beatup: 'fist', rogue: 'rift', arena: 'trophy', play: 'ball', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', bots: 'friends', rank: 'trophy', settings: 'gear' };
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
       b.onclick = () => {
         const go = b.dataset.go;
-        if (go === 'play') { if (G.Social.room?.mode === 'arena') G.ArenaUI.open(); else G.FriendsUI.open('survival'); }
+        if (go === 'play') { if (G.Social.room?.mode === 'arena') G.ArenaUI.open(); else if (G.Social.room?.mode === 'beatup') G.BeatupUI.open(); else G.FriendsUI.open('survival'); }
+        else if (go === 'beatup') G.BeatupUI.open();
         else if (go === 'arena') G.ArenaUI.open();
         else if (go === 'rogue') G.FriendsUI.open('rogue');
         else if (go === 'dex') openDex();

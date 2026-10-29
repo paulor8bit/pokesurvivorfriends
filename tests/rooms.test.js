@@ -43,6 +43,23 @@ test('Arena rooms allow one invited partner, lock entry during the tournament an
   assert.equal((await extra.rpc('join', { code: created.room.id, member: mon('Extra') })).ok, true);
 });
 const mon = name => ({ name, dex: 25, shiny: false });
+
+test('Beatup is its own two-player room and locks campaign entry until the host finishes', async t => {
+  const s = await setup(t), host = await s.client(), friend = await s.client(), extra = await s.client();
+  const { room } = await host.rpc('create', { member: mon('Host'), mode: 'beatup', catalog: [{ dex: 1 }], slots: [{ kind: 'bot', dex: 1 }, { kind: 'friend' }] });
+  assert.equal(room.mode, 'beatup'); assert.equal(room.capacity, 2); assert.equal(room.slots.length, 1);
+  assert.equal((await friend.rpc('join', { code: room.id, member: mon('Friend') })).ok, true);
+  assert.equal((await extra.rpc('join', { code: room.id, member: mon('Extra') })).ok, false);
+  assert.equal((await friend.rpc('start', { seed: 1 })).ok, false);
+  assert.equal((await host.rpc('start', { seed: 1 })).room.run.mode, 'beatup');
+  assert.equal((await host.rpc('open', { open: true })).ok, false);
+  assert.equal((await host.rpc('slots', { mode: 'survival', slots: [] })).ok, false);
+  await friend.rpc('leave');
+  assert.equal((await extra.rpc('join', { code: room.id, member: mon('Extra') })).ok, false);
+  assert.equal((await friend.rpc('finish')).ok, false);
+  assert.equal((await host.rpc('finish')).ok, true);
+  assert.equal((await extra.rpc('join', { code: room.id, member: mon('Extra') })).ok, true);
+});
 test('Rogue has two total Pokémon, a single bot slot and live guests replace that bot', async t => {
   const s = await setup(t), host = await s.client(), friend = await s.client(), extra = await s.client();
   const created = await host.rpc('create', { member: mon('Host'), mode: 'rogue', catalog: [{ dex: 1 }, { dex: 4 }, { dex: 7 }], slots: [1, 4, 7].map(dex => ({ kind: 'bot', dex })) });

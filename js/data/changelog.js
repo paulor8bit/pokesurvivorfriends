@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-29', title: ['Beat ’em up: aventura pelas ruas', 'Beat ’em up: street adventure'], new: [
+    ['Novo modo separado no menu: Beat ’em up. Avance pelas ruas com um amigo por convite ou um bot, vença os grupos e enfrente Machamp, Gengar e Tyranitar em três fases. Quatro golpes manuais com combos, investida e especial, dash, caixas com maçãs, pontuação e ajuda ao parceiro caído. Usa os Pokémon, efeitos e sons do jogo, com cenários urbanos e música própria.',
+     'New separate main-menu mode: Beat ’em up. Advance through the streets with an invited friend or a bot, defeat enemy groups and face Machamp, Gengar and Tyranitar across three stages. Four manual attacks with combos, charge and special, dash, apple crates, score and fallen-partner rescue. Uses the game’s Pokémon, effects and sounds, with urban scenery and its own music.']
+  ] },
   { d: '2026-10-22', title: ['Rogue em dupla', 'Rogue duos'], chg: [
     ['O Rogue agora permite no máximo dois Pokémon na equipe: você e um amigo ou bot. A sala tem uma única vaga de parceiro; o convidado substitui o bot, e um terceiro jogador não pode entrar. O limite também vale no Android e na dificuldade das hordas. Seu treino e sua equipe salva são preservados.',
      'Rogue now allows at most two team Pokémon: you and a friend or bot. The room has one partner slot; guests replace the bot, and a third player cannot join. The limit also applies on Android and to horde difficulty. Saved training and team settings are preserved.']

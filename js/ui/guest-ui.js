@@ -103,7 +103,7 @@
     $('room-code').value = pendingCode; serverInfo();
   }
   async function open(mode) {
-    if (G.Social.room?.mode === 'arena') { G.UI.toast('Saia da sala da Arena antes de entrar no Rogue.'); return; }
+    if (['arena', 'beatup'].includes(G.Social.room?.mode)) { G.UI.toast('Saia da sala atual antes de trocar de modo.'); return; }
     if (G.Social.room) {
       if (['rogue', 'survival'].includes(mode) && G.Social.room.isHost && !G.Social.room.run) await G.Social.setSlots(G.Social.room.slots, mode);
       G.LobbyUI.open(); return;
@@ -187,7 +187,7 @@
       if (!r.ok) { notice(r.error, true); return; }
       pendingCode = '';
       if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-      if (G.Social.room?.mode === 'arena') G.ArenaUI.open(); else G.LobbyUI.open();
+      if (G.Social.room?.mode === 'arena') G.ArenaUI.open(); else if (G.Social.room?.mode === 'beatup') G.BeatupUI.open(); else G.LobbyUI.open();
     } catch (e) { notice(e.message, true); }
     finally { busy = false; $('room-pokemon-ok').disabled = false; }
   }

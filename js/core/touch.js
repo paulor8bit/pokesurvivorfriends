@@ -84,7 +84,8 @@ G.Touch = (() => {
     if (touchy && !active) { active = true; document.body.classList.add('touch'); }
     const b = hit(e.clientX, e.clientY);
     if (b) { e.preventDefault(); press(b); return; }
-    const playing = G.ArenaUI?.active ? G.ArenaUI.state?.phase === 'battle' && !G.SettingsUI.isOpen : G.Game?.state === 'playing';
+    const fight = G.ArenaUI?.active ? G.ArenaUI : G.BeatupUI?.active ? G.BeatupUI : null;
+    const playing = fight ? fight.state?.phase === 'battle' && !G.SettingsUI.isOpen : G.Game?.state === 'playing';
     if (!touchy || stick || !playing) return;
     if (fixed()) {
       // Fijo: sólo si el dedo cae cerca del joystick (si no, no hace nada).

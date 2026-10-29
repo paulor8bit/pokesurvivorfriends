@@ -110,7 +110,7 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
             let id; do { id = randomBytes(6).toString('hex').toUpperCase(); } while (rooms.has(id));
             info.slot = 0;
             const catalog = catalogOf(m.catalog);
-            const mode = ['arena', 'rogue'].includes(m.mode) ? m.mode : 'survival';
+            const mode = ['arena', 'rogue', 'beatup'].includes(m.mode) ? m.mode : 'survival';
             const next = { id, host: client.uid, mode, open: true, catalog, slots: slotsOf(m.slots, catalog, mode), run: null, members: new Map([[client.uid, info]]) };
             client.room = id; rooms.set(id, next); reply({ ok: true, room: view(next) }); break;
           }
@@ -120,7 +120,7 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
             if (!next) throw new Error('Esa sala ya no existe. Pide un nuevo enlace.');
             if (!next.open) throw new Error('La partida de esa sala ya ha empezado.');
             if (next.members.size >= capacityOf(next.mode)) throw new Error('La sala está llena.');
-            if (next.mode === 'arena' && next.run) throw new Error('O campeonato já começou. Aguarde o próximo.');
+            if (['arena', 'beatup'].includes(next.mode) && next.run) throw new Error('A partida já começou. Aguarde a próxima.');
             const info = member(client, m.member, next);
             info.slot = freeSlot(next);
             client.room = next.id; next.members.set(client.uid, info);
@@ -141,7 +141,7 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
           }
           case 'slots': {
             if (!room || room.host !== client.uid) throw new Error('Sólo el anfitrión puede cambiar los huecos.');
-            if (m.mode !== undefined && (room.run || room.mode === 'arena' || !['survival', 'rogue'].includes(m.mode))) throw new Error('O modo só pode mudar antes da partida.');
+            if (m.mode !== undefined && (room.run || ['arena', 'beatup'].includes(room.mode) || !['survival', 'rogue'].includes(m.mode))) throw new Error('O modo só pode mudar antes da partida.');
             const mode = m.mode ?? room.mode;
             if (room.members.size > capacityOf(mode)) throw new Error('O Rogue permite no máximo dois Pokémon. Deixe apenas um convidado na sala.');
             const next = slotsOf(m.slots, room.catalog, mode);
@@ -158,7 +158,7 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
             if (room.run) throw new Error('La partida ya está en marcha.');
             const seed = Number(m.seed);
             if (!Number.isInteger(seed) || seed < 0 || seed > 0x7fffffff) throw new Error('Mensaje inválido.');
-            room.run = { id: randomBytes(8).toString('hex'), seed, mode: room.mode }; room.open = room.mode !== 'arena';
+            room.run = { id: randomBytes(8).toString('hex'), seed, mode: room.mode }; room.open = !['arena', 'beatup'].includes(room.mode);
             broadcast(room); reply({ ok: true, room: view(room) }); break;
           }
           case 'finish': {
@@ -167,7 +167,7 @@ function createGameServer({ root = path.resolve(__dirname, '..') } = {}) {
           }
           case 'open': {
             if (!room || room.host !== client.uid) throw new Error('Sólo el anfitrión puede empezar.');
-            if (room.mode === 'arena' && room.run) throw new Error('O campeonato já começou.');
+            if (['arena', 'beatup'].includes(room.mode) && room.run) throw new Error('A partida já começou.');
             room.open = m.open === true; broadcast(room); reply({ ok: true }); break;
           }
           case 'peer': {

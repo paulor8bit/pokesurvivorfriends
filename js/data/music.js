@@ -11,6 +11,12 @@
  * drums:  X fuerte · x medio · o suave · . nada
  */
 G.MUSIC = {
+  beatup: {
+    bpm: 128, swing: 0.04, chords: ['Am', 'F', 'Dm', 'E', 'Am', 'F', 'Dm', 'E'],
+    melody: [{ inst: 'lead', vel: 0.4, bars: ['A4:2 -:2 E4:2 G4:2 A4:4 C5:4', 'A4:2 G4:2 F4:4 C5:4 A4:4', 'D4:2 F4:2 A4:4 F4:4 D4:4', 'E4:2 G3:2 B4:4 G4:4 E4:4', 'A4:2 C5:2 E5:4 C5:4 A4:4', 'F4:2 A4:2 C5:4 A4:4 F4:4', 'D5:4 A4:4 F4:4 D4:4', 'E4:2 B4:2 G4:4 E4:4 -:4'] }],
+    parts: [{ inst: 'bass', octave: 2, useBass: true, vel: 0.65, pattern: 'R.R.F.R.R.R.O.R.' }, { inst: 'pad', octave: 3, vel: 0.3, pattern: 'C-------C-------' }],
+    drums: { kick: 'x...x...x...x...', snare: '....x.......x...', shaker: 'o.o.o.o.o.o.o.o.' }
+  },
   rogue: {
     bpm: 88, swing: 0.08, chords: ['Am', 'Am', 'F', 'E', 'Dm', 'Am', 'F', 'E'],
     melody: [{ inst: 'flute', vel: 0.65, bars: [
